@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>公众号主题对比</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 32px 24px 60px;
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: #f4f2ed;
+      color: #1f2937;
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; }
+    h1 { margin: 0 0 12px; font-size: 34px; line-height: 1.15; }
+    .intro { margin: 0 0 28px; font-size: 16px; line-height: 1.8; color: #5b6472; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px;
+    }
+    .card {
+      display: block;
+      padding: 22px 20px;
+      border-radius: 18px;
+      text-decoration: none;
+      background: rgba(255,255,255,.9);
+      border: 1px solid #e3ddd4;
+      box-shadow: 0 16px 44px rgba(56,43,30,.06);
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+      color: inherit;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 20px 50px rgba(56,43,30,.1);
+      border-color: #d4c8bb;
+    }
+    .group {
+      display: inline-block;
+      margin-bottom: 12px;
+      font-size: 12px;
+      letter-spacing: .06em;
+      color: #8a745f;
+      background: #f3ece3;
+      border-radius: 999px;
+      padding: 5px 10px;
+    }
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 22px;
+      line-height: 1.25;
+    }
+    .card p {
+      margin: 0 0 14px;
+      font-size: 14px;
+      color: #667085;
+      line-height: 1.7;
+    }
+    .card span {
+      font-size: 13px;
+      color: #111827;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>公众号排版主题对比</h1>
+    <p class="intro">同一篇文章、同一组配图、同一张表格，并统一正文宽度与图注规则。这个仓库只保留 4 套自定义 Wechat 排版，用于后续 skill 化封装。</p>
+    <div class="grid">
+      
+      <a class="card" href="claude.html">
+        <div class="group">Wechat 主题</div>
+        <h2>Claude</h2>
+        <p>暖色强调、产品感、信息框明确</p>
+        <span>打开预览</span>
+      </a>
+    
+      <a class="card" href="nyt.html">
+        <div class="group">Wechat 主题</div>
+        <h2>纽约时报</h2>
+        <p>报刊专栏感、克制、正式</p>
+        <span>打开预览</span>
+      </a>
+    
+      <a class="card" href="deep-reading.html">
+        <div class="group">Wechat 主题</div>
+        <h2>深度阅读</h2>
+        <p>研究阅读感、沉浸、层次稳</p>
+        <span>打开预览</span>
+      </a>
+    
+      <a class="card" href="medium.html">
+        <div class="group">Wechat 主题</div>
+        <h2>Medium</h2>
+        <p>现代长文、通透、易读</p>
+        <span>打开预览</span>
+      </a>
+    
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Medium 预览</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    a { color: inherit; }
+    
+      :root {
+        --bg: #f8f7f4;
+        --surface: #ffffff;
+        --text: #242424;
+        --muted: #6b6b6b;
+        --line: #e6e3dd;
+        --quote-bg: #fafafa;
+        --accent: #111111;
+        --code-bg: #2f3136;
+        --code-top: #44464d;
+        --table-head: #f2f1ed;
+        --table-stripe: #faf9f6;
+        --caption-bg: #f6f5f2;
+      }
+      body { font-family: sohne, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); }
+      .page { max-width: 860px; margin: 0 auto; padding: 34px 24px 88px; }
+      .chrome { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; color:var(--muted); font-size:13px; }
+      .chip { background:#fff; border:1px solid var(--line); padding:6px 12px; border-radius:999px; font-weight:700; }
+      .article { max-width: 720px; margin: 0 auto; background: var(--surface); padding: 42px 44px 68px; box-shadow: 0 12px 34px rgba(0,0,0,.05); border-radius: 18px; }
+      .article h1 { font-size: 44px; line-height: 1.12; color: var(--accent); margin: 0 0 16px; font-weight: 800; letter-spacing: -.035em; }
+      .article h2 { font-size: 31px; margin: 56px 0 18px; color: #151515; line-height: 1.28; font-weight: 800; letter-spacing: -.03em; }
+      .article h3 { font-size: 23px; margin: 34px 0 14px; color: #333; font-weight: 700; }
+      .article p, .article li, .article blockquote { font-size: 20px; line-height: 1.92; color: var(--text); }
+      .article p { margin: 0 0 18px; }
+      .article h1 + p em { font-style: normal; color: var(--muted); font-size: 15px; }
+      .article hr { border:none; height:1px; width:132px; margin:40px auto; background:#ddd8cf; }
+      .article strong { font-weight: 800; color:#151515; }
+      .article blockquote { margin: 28px 0; padding: 8px 0 8px 18px; border-left: 3px solid #181818; background: transparent; color: #4b4b4b; font-style: italic; }
+      .article pre { background: var(--code-bg); color:#f8f8f8; border-radius: 10px; padding: 18px 20px; overflow:auto; margin: 28px 0; position:relative; box-shadow: 0 12px 28px rgba(32,34,38,.18); }
+      .article pre::before { content:""; position:absolute; inset:0 0 auto 0; height:28px; border-radius:10px 10px 0 0; background: var(--code-top); }
+      .article pre code { display:block; padding-top:16px; font-size:15px; line-height:1.8; font-family:"JetBrains Mono","Cascadia Code",monospace; white-space:pre-wrap; }
+    
+    
+  .article ul, .article ol { margin: 0 0 22px 1.2em; }
+  .article li { margin-bottom: 10px; }
+  figure.wechat-figure { margin: 34px 0; }
+  figure.wechat-figure img { width: 100%; display: block; border-radius: 14px; box-shadow: 0 16px 38px rgba(25, 27, 31, 0.08); }
+  figure.wechat-figure figcaption {
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.7;
+    text-align: center;
+    letter-spacing: .01em;
+    background: var(--caption-bg);
+    border-radius: 999px;
+    display: inline-block;
+    padding: 6px 14px;
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .article table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 28px 0;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    table-layout: fixed;
+    background: #fff;
+  }
+  .article th,
+  .article td {
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    text-align: left;
+    vertical-align: top;
+    font-size: 15px;
+    line-height: 1.75;
+  }
+  .article th {
+    background: var(--table-head);
+    font-weight: 700;
+  }
+  .article tbody tr:nth-child(even) td {
+    background: var(--table-stripe);
+  }
+  @media (max-width: 820px) {
+    .page { padding: 20px 16px 48px; }
+    .article { padding: 30px 22px 44px; border-radius: 16px; }
+    .article h1 { font-size: 34px; }
+    .article h2 { font-size: 26px; }
+    .article h3 { font-size: 20px; }
+    .article p, .article li, .article blockquote { font-size: 17px; }
+    .article table { display: block; overflow-x: auto; white-space: nowrap; }
+  }
+
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="chrome">
+      <div>Medium · 现代长文、通透、易读</div>
+      <a href="./index.html">返回索引</a>
+    </div>
+    <article class="article" id="article"></article>
+  </div>
+  <script>
+    const rawSource = "---\ntitle: 别再让 AI 直接写正文了：一个提示词帮你理顺复杂资料重构工作流\nsummary: 当你手上同时有旧版草稿、会议记录、PPT 和参考资料时，真正困难的不是让 AI 开始写，而是先把冲突、结构、重点和风险整理清楚。这篇文章讲的是，为什么复杂任务里先统筹、再写作，反而比直接生成正文更省时间。\nauthor: 栗子智培\ncoverImage: imgs/cover-wechat-test.png\n---\n\n# 别再让 AI 直接写正文了：一个提示词帮你理顺复杂资料重构工作流\n\n*作者：栗子智培*\n\n---\n\n故事是这样的。\n\n我前两天帮一个朋友看他的商业计划书。他特别得意地跟我说，兄弟，这版是AI写的，效率超高。\n\n我翻开一看，确实像那么回事。结构清晰，标题完整，语言也正式。我正想说写得不错，他按住我的手，说你别急，你再仔细看看。\n\n我一看，好家伙。\n\n数字前后对不上。旧版里的核心亮点没了。老板上次会议着重强调的卖点，AI是一个字都没提。有些章节写得那叫一个虚，感觉跟没写一样。最离谱的是，有一段规划写得跟已经落地了似的。。。实际上八字还没一撇。\n\n我当时就愣住了。\n\n我说你这是找AI帮忙，还是找AI帮倒忙？\n\n他也很无奈，说他也不想这样。但手上资料太多了，旧版草稿、老板会议记录、参考模板、好几个版本的PPT，丢给AI让AI自己整合，结果AI就给他整合成这个鬼样子。\n\n说实话，我不觉得这是AI的锅。\n\n问题在于，我这个朋友，以及很多像他一样的人，在用AI写复杂文件的时候，犯了一个致命的错误：\n\n**一上来就让AI写正文。**\n\n![配图1：AI写作问题的场景](imgs/01-scene-ai-writing-problems.png)\n\n---\n\n你发现没有，现在大家用AI，最常见的场景就是让它帮自己”写点东西”。\n\n写一份方案。整理一篇汇报。生成一个PPT大纲。改一段论文。写一篇公众号。甚至直接让它帮你做一份商业计划书。\n\n一开始，这种方式确实很爽。\n\n你把需求丢进去，AI很快就能给你一大段内容。标题有了，结构有了，语气也像那么回事。\n\n但用久了之后，很多人都会遇到一个问题：\n\nAI写得很快，但你总觉得“不太对”。\n\n尤其是当任务变复杂以后，这种感觉会越来越明显。\n\n比如你不是从零写一篇短文，而是要基于一堆旧资料，重新整理一份正式文件。这时候你手上可能有：\n\n- 旧版商业计划书\n- 新版草稿\n- 老板会议记录\n- 平台介绍PPT\n- 参考书和行业资料\n- 之前AI生成过但不满意的版本\n\n你以为把这些资料都丢给AI，再说一句“帮我整理成新版”，它就能自动理解主次、保留重点、合并重复、检查矛盾。\n\n结果往往不是。\n\nAI每次都能写出一份“看起来还行”的东西。标题完整，结构正式，语言也不差。\n\n但仔细一看，问题一堆：\n\n- 旧版里的重点漏了\n- 老板喜欢的说法没保留\n- 数字前后不一致\n- 有些章节重复写\n- 有些内容写得太虚\n- 有些规划被写得像已经落地\n- 有些表达还可能有合规风险\n\n最后就变成了一件很离谱的事：\n\n> **你以为AI在帮你写，结果你一直在帮AI当总编辑。**\n\n![配图2：AI直接写 vs 先统筹再写作对比](imgs/02-comparison-ai-direct-vs-organize-first.png)\n\n---\n\n后来我发现，问题不是AI不会写。\n\n问题是，我一上来就让它写正文了。\n\n像商业计划书、项目申报书、毕业论文、汇报PPT、制度文件、品牌方案这类东西，本质上都不是简单写作。它们更像是一次“复杂资料重构”。\n\n真正麻烦的不是写句子，而是这些事：\n\n```\n哪个资料是主版本？\n哪些内容必须保留？\n哪些内容已经过时？\n哪些地方互相矛盾？\n哪些说法是老板偏好？\n哪些表达有风险？\n哪些章节重复了？\n新版结构应该怎么排？\n最后要不要拆成多个版本？\n```\n\n如果这些没理清，直接让AI写正文，它就只能把看到的内容重新拼一遍。\n\n结果是，资料越多，AI越容易写偏。\n\n不是因为AI变笨了，而是因为你没有先给它建立一个“总控系统”。\n\n---\n\n以前我会这样问AI：\n\n> 帮我基于这些资料写一份新的商业计划书。\n\n现在我会换一种方式：\n\n> 你先别写正文。你先当总编辑，帮我拆资料、查冲突、定结构，再写。\n\n这个变化很关键。\n\nAI不应该一开始就是“写手”，而应该先变成：\n\n- 📂 资料管理员\n- 🧭 结构规划师\n- 🔍 冲突检查员\n- 🧱 版本统筹人\n- ✍️ 最后才是写作者\n\n![配图3：AI的五个角色框架](imgs/03-framework-five-ai-roles.png)\n\n也就是说：\n\n> **先统筹，再写作。**\n> **先拆资料，再生成正文。**\n\n---\n\n## 这个提示词是干什么的？\n\n我整理了一个 **复杂资料重构任务总控提示词**。\n\n它不是让AI直接写最终稿，而是让AI先帮你完成一套工作流：\n\n- ✅ 先问你关键问题\n- ✅ 建立资料总控表\n- ✅ 整理偏好词库\n- ✅ 整理风险词库\n- ✅ 检查新旧版本冲突\n- ✅ 设计新版结构\n- ✅ 分章节写作\n- ✅ 最后做统稿检查\n- ✅ 判断是否要拆分多个版本\n\n![配图4：复杂资料重构九步工作流](imgs/04-flowchart-nine-step-workflow.png)\n\n适合这些场景：\n\n- 商业计划书重构\n- 融资BP整理\n- 项目申报书撰写\n- 论文/毕业设计修改\n- 汇报PPT内容梳理\n- 会议纪要整合\n- 品牌策划方案\n- 制度文件修订\n- 多个旧版本合并成新版本\n\n你也可以按文章类型去挑更合适的排版气质：\n\n| 内容场景 | 推荐主题 | 阅读气质 | 适合内容 |\n| --- | --- | --- | --- |\n| 观点表达型文章 | Claude | 温暖、清晰、有产品感 | 方法论拆解、经验复盘、个人表达 |\n| 深度分析型文章 | 纽约时报 | 正式、克制、报刊感 | 行业分析、长篇评论、严肃议题 |\n| 框架说明型文章 | 深度阅读 | 沉稳、理性、层次清楚 | 工作流讲解、研究总结、知识整理 |\n| 轻长文传播型文章 | Medium | 通透、现代、易读 | 经验分享、故事化表达、面向大众传播 |\n\n只要你手上有很多资料，又怕AI写偏，这个提示词就能用。\n\n---\n\n## 完整提示词\n\n下面这段可以直接复制给AI：\n\n\n```text\n[完整提示词正文此处省略]\n[正式工作流里，这里会替换成可直接复制使用的总控提示词]\n```\n\n---\n\n## 它真正解决的是什么？\n\n表面上看，这只是一个提示词。\n\n但它真正解决的是一个更大的问题：\n\n> **你不需要再自己盯着AI有没有漏东西。**\n> **你要让AI自己建立检查机制。**\n\n以前你要自己发现：\n\n- 这个地方重复了\n- 这个数字不对\n- 老板喜欢的表达没写\n- 旧版重点漏了\n- 这个说法有风险\n\n现在你可以直接让AI在流程里检查这些东西。\n\n这才是它省时间的地方。\n\n---\n\n## 什么时候最适合用？\n\n如果你只是写一篇短文，不一定需要它。\n\n但如果你手上的资料超过两份，而且它们之间可能互相打架，就很适合用。\n\n比如：\n\n```\n旧版 + 新版正文 + PPT\n会议记录 + 正式文件\n老板意见 + 参考资料\n多个AI草稿 + 你自己的想法\n```\n\n这些场景最容易出现一个问题：\n\n> **你以为是在写，其实是在整理混乱。**\n\n![配图5：最容易出问题的场景类型](imgs/05-infographic-usage-scenarios.png)\n\n这时候，先别急着写。\n\n先让AI帮你把混乱拆开。\n\n---\n\n## 最后\n\nAI时代，很多人都在追求：\n\n> 一个提示词，直接生成最终稿。\n\n但我的经验刚好相反。\n\n越复杂的任务，越不能急着生成。你要先让AI慢下来，像一个总编辑一样，把资料、目标、冲突、结构和版本都理清楚。\n\n写作只是最后一步。\n\n真正决定质量的，是写之前那套工作流。\n\n有些东西不拆开，是看不见的。\n\n有些问题不先问，最后一定会返工。\n\n---\n\n*以上，既然看到这里了，如果觉得不错，随手点个赞、在看、转发三连吧，如果想第一时间收到推送，也可以给我个星标⭐～*\n\n*谢谢你看我的文章，我们，下次再见。*\n";
+
+    function stripFrontmatter(text) {
+      const match = text.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+      if (!match) return text;
+      return match[2];
+    }
+
+    const renderer = new marked.Renderer();
+    renderer.image = ({ href, text }) => {
+      const safeAlt = text || "";
+      const figcaption = safeAlt ? "<figcaption>" + safeAlt + "</figcaption>" : "";
+      return "<figure class=\"wechat-figure\"><img src=\"" + href + "\" alt=\"" + safeAlt + "\" />" + figcaption + "</figure>";
+    };
+    renderer.blockquote = (quote) => {
+      if (typeof quote === "string") return "<blockquote>" + quote + "</blockquote>";
+      if (quote && Array.isArray(quote.tokens)) return "<blockquote>" + marked.Parser.parse(quote.tokens) + "</blockquote>";
+      return "<blockquote></blockquote>";
+    };
+    renderer.hr = () => "<hr />";
+    marked.setOptions({
+      renderer,
+      gfm: true,
+      breaks: false,
+    });
+
+    const content = stripFrontmatter(rawSource);
+    document.getElementById("article").innerHTML = marked.parse(content);
+  </script>
+</body>
+</html>

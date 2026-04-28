@@ -72,7 +72,7 @@
 
 ### 预览生成脚本
 
-`D:\cc project\新建文件夹 (2)\wechat-theme-previews\generate-previews.mjs`
+`prototype/wechat-theme-previews/generate-previews.mjs`
 
 用途：
 
@@ -81,6 +81,16 @@
 - 统一图片图注
 - 统一表格展示
 - 更新预览入口页
+
+### Skill 骨架
+
+`skills/wechat-article-workflow/SKILL.md`
+
+用途：
+
+- 定义未来通用 skill 的触发条件
+- 固化阶段化输出与人工确认点
+- 给后续 AI 一个明确的封装入口
 
 ### 项目说明文档
 
@@ -106,12 +116,9 @@
 
 ## GitHub 发布建议
 
-当前目录本身还不是 Git 仓库。
+当前仓库已经建立并推送到 GitHub。
 
-建议后续这样处理：
+后续重点不再是“先上传”，而是继续做两件事：
 
-1. 新建一个独立仓库，比如 `wechat-article-workflow`
-2. 把本目录中的项目说明和必要脚本整理进去
-3. 再逐步加入 skill 定义、示例文章、示例输出和使用说明
-
-如果要继续推进，优先目标不是“马上上传”，而是先保证另一个 AI 拿到这些文档后，可以无上下文接手继续做。
+1. 验证整条工作流的阶段输出是否稳定
+2. 把现有原型逐步收敛成真正可复用的 skill

@@ -1,0 +1,49 @@
+{
+  "tasks": [
+    {
+      "id": "01-scene",
+      "promptFiles": ["H:/3.写公众号素材/imgs/prompts/01-scene-ai-writing-problems.md"],
+      "image": "H:/3.写公众号素材/imgs/01-scene-ai-writing-problems.png",
+      "provider": "seedream",
+      "model": "doubao-seedream-5-0-260128",
+      "ar": "16:9",
+      "quality": "2k"
+    },
+    {
+      "id": "02-comparison",
+      "promptFiles": ["H:/3.写公众号素材/imgs/prompts/02-comparison-ai-direct-vs-organize-first.md"],
+      "image": "H:/3.写公众号素材/imgs/02-comparison-ai-direct-vs-organize-first.png",
+      "provider": "seedream",
+      "model": "doubao-seedream-5-0-260128",
+      "ar": "16:9",
+      "quality": "2k"
+    },
+    {
+      "id": "03-framework",
+      "promptFiles": ["H:/3.写公众号素材/imgs/prompts/03-framework-five-ai-roles.md"],
+      "image": "H:/3.写公众号素材/imgs/03-framework-five-ai-roles.png",
+      "provider": "seedream",
+      "model": "doubao-seedream-5-0-260128",
+      "ar": "16:9",
+      "quality": "2k"
+    },
+    {
+      "id": "04-flowchart",
+      "promptFiles": ["H:/3.写公众号素材/imgs/prompts/04-flowchart-nine-step-workflow.md"],
+      "image": "H:/3.写公众号素材/imgs/04-flowchart-nine-step-workflow.png",
+      "provider": "seedream",
+      "model": "doubao-seedream-5-0-260128",
+      "ar": "16:9",
+      "quality": "2k"
+    },
+    {
+      "id": "05-infographic",
+      "promptFiles": ["H:/3.写公众号素材/imgs/prompts/05-infographic-usage-scenarios.md"],
+      "image": "H:/3.写公众号素材/imgs/05-infographic-usage-scenarios.png",
+      "provider": "seedream",
+      "model": "doubao-seedream-5-0-260128",
+      "ar": "16:9",
+      "quality": "2k"
+    }
+  ]
+}
