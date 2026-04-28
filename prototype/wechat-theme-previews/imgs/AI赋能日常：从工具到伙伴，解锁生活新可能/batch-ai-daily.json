@@ -1,0 +1,60 @@
+{
+  "jobs": 2,
+  "tasks": [
+    {
+      "id": "illustration-01",
+      "promptFiles": [
+        "prompts/01-framework-ai-tool-to-partner.md"
+      ],
+      "image": "01-framework-ai-tool-to-partner.png",
+      "provider": "seedream",
+      "model": "doubao-seedream-5-0-260128",
+      "ar": "4:3",
+      "quality": "2k"
+    },
+    {
+      "id": "illustration-02",
+      "promptFiles": [
+        "prompts/02-comparison-workflow-before-after.md"
+      ],
+      "image": "02-comparison-workflow-before-after.png",
+      "provider": "seedream",
+      "model": "doubao-seedream-5-0-260128",
+      "ar": "4:3",
+      "quality": "2k"
+    },
+    {
+      "id": "illustration-03",
+      "promptFiles": [
+        "prompts/03-scene-ai-learning-tutor.md"
+      ],
+      "image": "03-scene-ai-learning-tutor.png",
+      "provider": "seedream",
+      "model": "doubao-seedream-5-0-260128",
+      "ar": "4:3",
+      "quality": "2k"
+    },
+    {
+      "id": "illustration-04",
+      "promptFiles": [
+        "prompts/04-infographic-ai-daily-life.md"
+      ],
+      "image": "04-infographic-ai-daily-life.png",
+      "provider": "seedream",
+      "model": "doubao-seedream-5-0-260128",
+      "ar": "4:3",
+      "quality": "2k"
+    },
+    {
+      "id": "illustration-05",
+      "promptFiles": [
+        "prompts/05-comparison-ai-guardrails.md"
+      ],
+      "image": "05-comparison-ai-guardrails.png",
+      "provider": "seedream",
+      "model": "doubao-seedream-5-0-260128",
+      "ar": "4:3",
+      "quality": "2k"
+    }
+  ]
+}
