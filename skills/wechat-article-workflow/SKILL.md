@@ -7,7 +7,7 @@ description: Use when producing a long-form WeChat Official Account article from
 
 ## Overview
 
-这是一个“半自动化公众号长文生产”skill 骨架。
+这是一个“半自动化公众号长文生产”skill。
 
 核心原则：
 
@@ -16,6 +16,18 @@ description: Use when producing a long-form WeChat Official Account article from
 - 默认一次性输出 4 套 Wechat 排版供手动选择
 - 编排子 skill 时，必须完整遵循子 skill 的原始流程，不能为了提速跳过确认、分析或中间产物
 - 每篇文章的图片资产必须单独存放在“以文章标题命名”的文件夹中，不能混放
+
+当前这一版已经封装好的最小稳定闭环是：
+
+- 输入 1 篇 Markdown 正文
+- 自动创建文章同名目录
+- 输出 4 套预览 HTML
+- 输出 4 套发布态 HTML
+
+仓库内主脚本：
+
+- `skills/wechat-article-workflow/scripts/workflow_bundle.py`
+- `skills/wechat-article-workflow/scripts/install_local_skill.py`
 
 ## When to Use
 
@@ -45,20 +57,37 @@ description: Use when producing a long-form WeChat Official Account article from
 ## Workflow
 
 1. 读取输入正文或草稿
-2. 使用 `khazix-writer` 润色正文
-3. 使用 `baoyu-format-markdown` 统一 Markdown 结构
+2. 如果正文尚未润色，先走 `khazix-writer`
+3. 如果 Markdown 尚未整理，先走 `baoyu-format-markdown`
 4. 为当前文章创建独立图片资产目录，目录名默认等于文章标题
-5. 调用 `baoyu-article-illustrator` 前，先完整执行它的确认步骤
-6. 先向用户确认本篇正文适合几张图，再继续图位分析与 prompt 打包
-7. 输出正文配图建议与 prompt 打包结果
-8. 等待用户确认是否生成图片
-9. 生成正文图片，默认 `4:3` 横版
-10. 将图片插回正文，并检查长段落是否已经被足够打断
-11. 输出 4 套 Wechat HTML
-12. 等待用户手动选择最终排版
-13. 选中的主题必须再导出一份“发布态 HTML”，不能直接拿预览页发稿
-14. 发布态 HTML 进入草稿箱投递前，必须做微信兼容检查
-15. 再决定是否进入草稿箱投递
+5. 如果正文已具备插图，先导出 4 套预览 HTML
+6. 同时导出 4 套对应主题的发布态 HTML
+7. 等待用户手动选择最终排版
+8. 后续再决定是否进入草稿箱投递
+
+## Minimal Stable Entry
+
+当用户只是要先“跑通排版闭环”时，优先使用这个入口，而不是一口气调完整大工作流：
+
+```powershell
+py .\skills\wechat-article-workflow\scripts\workflow_bundle.py `
+  "H:\3.写公众号素材\某篇文章.md" `
+  --image-root "H:\3.写公众号素材\imgs"
+```
+
+这条命令会：
+
+- 读取 Markdown 标题
+- 在 `--image-root` 下创建文章同名目录
+- 把正文引用到的本地图片复制进文章目录
+- 输出 4 套预览 HTML
+- 输出 4 套发布态 HTML
+
+本机安装 skill：
+
+```powershell
+py .\skills\wechat-article-workflow\scripts\install_local_skill.py
+```
 
 ## Asset Directory Rule
 
@@ -170,14 +199,16 @@ imgs/
 
 ## Implementation Notes
 
-当前还只是第一版 skill 骨架，尚未完成真正安装态封装。
+当前已经完成：
 
-后续正式实现时要补齐：
+- 最小稳定闭环脚本 `workflow_bundle.py`
+- 本机安装脚本 `install_local_skill.py`
 
-- 输入参数约定
-- 目录结构约定
-- 中间产物命名约定
-- 错误处理与阶段回滚规则
+当前仍未完成：
+
+- 把润色、Markdown 结构化、配图规划、图片生成、草稿箱投递全部串成一个自动执行器
+- 把“300 字视觉中断检查”正式编码进执行脚本
+- 把子 skill 编排和确认点做成真正的可交互状态机
 
 ## Common Mistakes
 

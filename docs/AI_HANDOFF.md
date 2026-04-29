@@ -66,6 +66,8 @@
   `C:\Users\86156\.codex\skills\baoyu-format-markdown\scripts\run-formatter.ps1`
 - 如果后续 AI 需要跑格式化，优先用：
   `powershell -File run-formatter.ps1 <markdown-file>`
+- 当前 skill 已安装到本机：
+  `C:\Users\86156\.codex\skills\wechat-article-workflow`
 
 ## 当前已经验证过的重要技术结论
 

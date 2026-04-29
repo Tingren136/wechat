@@ -180,6 +180,12 @@ imgs/
 - 定义未来通用 skill 的触发条件
 - 固化阶段化输出与人工确认点
 - 给后续 AI 一个明确的封装入口
+- 当前已配套最小稳定闭环脚本与本机安装脚本
+
+相关脚本：
+
+- `skills/wechat-article-workflow/scripts/workflow_bundle.py`
+- `skills/wechat-article-workflow/scripts/install_local_skill.py`
 
 ### 项目说明文档
 
