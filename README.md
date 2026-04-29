@@ -197,6 +197,7 @@ imgs/
 - `skills/wechat-article-workflow/scripts/install_local_skill.py`
 - `skills/wechat-article-workflow/scripts/ensure_dependencies.py`
 - `skills/wechat-article-workflow/scripts/workflow_state_manager.py`
+- `skills/wechat-article-workflow/scripts/workflow_stage_runner.py`
 
 依赖仓库：
 

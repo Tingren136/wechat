@@ -63,6 +63,7 @@ class WechatArticleWorkflowBundleTests(unittest.TestCase):
             self.assertTrue((article_dir / "05-排版" / "发布版").exists())
             self.assertTrue((article_dir / "06-发布").exists())
             self.assertTrue((article_dir / "02-规划" / "工作流状态.json").exists())
+            self.assertTrue((article_dir / "02-规划" / "当前阶段说明.md").exists())
             self.assertTrue((article_dir / "02-规划" / "规则摘要.md").exists())
             self.assertTrue((article_dir / "02-规划" / "发布检查清单.md").exists())
             self.assertTrue((article_dir / "01-原稿" / "01-草稿.md").exists())

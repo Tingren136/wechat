@@ -78,6 +78,15 @@ def load_state_module():
     return module
 
 
+def load_stage_runner_module():
+    module_path = Path(__file__).resolve().parent / "workflow_stage_runner.py"
+    spec = importlib.util.spec_from_file_location("workflow_stage_runner", module_path)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
+
+
 def replace_markdown_image_paths(markdown: str, rename_map: dict[str, str]) -> str:
     pattern = re.compile(r"(!\[[^\]]*\]\()([^)]+)(\))")
 
@@ -175,6 +184,7 @@ def write_workspace_files(
         selected_theme_path.write_text("", encoding="utf-8")
 
     state_module = load_state_module()
+    stage_runner_module = load_stage_runner_module()
     state_path = workspace_paths["planning"] / "工作流状态.json"
     artifacts = {
         "draft": str(workspace_paths["source"] / "01-草稿.md"),
@@ -185,6 +195,7 @@ def write_workspace_files(
         "selected_theme": str(selected_theme_path),
     }
     state_module.initialize_state(state_path=state_path, title=title, artifacts=artifacts)
+    stage_runner_module.generate_stage_packet(state_path)
 
 
 def build_preview_html(publish_module: Any, normalized_markdown_path: Path, output_path: Path, theme_id: str, title: str) -> None:

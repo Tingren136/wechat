@@ -27,6 +27,7 @@
 - 已封装本机安装脚本：`skills/wechat-article-workflow/scripts/install_local_skill.py`
 - 已封装依赖检查脚本：`skills/wechat-article-workflow/scripts/ensure_dependencies.py`
 - 已封装阶段推进状态机脚本：`skills/wechat-article-workflow/scripts/workflow_state_manager.py`
+- 已封装当前阶段说明生成器：`skills/wechat-article-workflow/scripts/workflow_stage_runner.py`
 - 已安装到本机 `C:\Users\86156\.codex\skills\wechat-article-workflow`
 - 已把文章工作区升级为中文分层目录结构：`01-原稿 / 02-规划 / 03-提示词 / 04-素材 / 05-排版 / 06-发布`
 - 已拆出独立草稿箱发布 skill：`skills/wechat-draft-publisher`

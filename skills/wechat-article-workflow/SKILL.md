@@ -30,6 +30,7 @@ description: Use when producing a long-form WeChat Official Account article from
 - `skills/wechat-article-workflow/scripts/install_local_skill.py`
 - `skills/wechat-article-workflow/scripts/ensure_dependencies.py`
 - `skills/wechat-article-workflow/scripts/workflow_state_manager.py`
+- `skills/wechat-article-workflow/scripts/workflow_stage_runner.py`
 
 ## When to Use
 
@@ -293,6 +294,7 @@ imgs/
 - 依赖检查脚本 `ensure_dependencies.py`
 - 分层文章工作区目录结构
 - 阶段推进状态机脚本 `workflow_state_manager.py`
+- 当前阶段说明生成器 `workflow_stage_runner.py`
 
 当前仍未完成：
 
