@@ -70,6 +70,10 @@
   `C:\Users\86156\.codex\skills\wechat-article-workflow`
 - 当前依赖清单在：
   `skills/wechat-article-workflow/references/dependencies.json`
+- 文章工作区目录现已全面中文化，例如：
+  `01-原稿 / 02-规划 / 03-提示词 / 04-素材 / 05-排版 / 06-发布`
+- 草稿箱最后一跳应优先使用我们自己的：
+  `skills/wechat-draft-publisher`
 
 ## 当前已经验证过的重要技术结论
 

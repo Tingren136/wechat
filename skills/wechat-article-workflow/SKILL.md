@@ -80,7 +80,6 @@ description: Use when producing a long-form WeChat Official Account article from
 - `baoyu-format-markdown`
 - `baoyu-article-illustrator`
 - `baoyu-imagine`
-- `baoyu-post-to-wechat`
 
 检查与自动补装脚本：
 
@@ -134,22 +133,22 @@ py .\skills\wechat-article-workflow\scripts\ensure_dependencies.py
 
 完整工作流里的关键中间产物应尽量固定命名：
 
-- `00-source/01-draft.md`
-- `00-source/02-polished.md`
-- `00-source/03-formatted.md`
-- `00-source/04-with-images.md`
-- `01-planning/workflow-state.json`
-- `01-planning/rules-summary.md`
-- `01-planning/publish-checklist.md`
-- `01-planning/outline.md`
-- `01-planning/batch.json`
-- `02-prompts/draft/`
-- `02-prompts/final/`
-- `03-assets/body-images/`
-- `03-assets/cover-images/`
-- `04-output/previews/`
-- `04-output/publish/`
-- `05-delivery/selected-theme.txt`
+- `01-原稿/01-草稿.md`
+- `01-原稿/02-润色稿.md`
+- `01-原稿/03-整理稿.md`
+- `01-原稿/04-配图稿.md`
+- `02-规划/工作流状态.json`
+- `02-规划/规则摘要.md`
+- `02-规划/发布检查清单.md`
+- `02-规划/outline.md`
+- `02-规划/batch.json`
+- `03-提示词/草稿/`
+- `03-提示词/定稿/`
+- `04-素材/正文配图/`
+- `04-素材/封面配图/`
+- `05-排版/预览版/`
+- `05-排版/发布版/`
+- `06-发布/已选主题.txt`
 
 ## Asset Directory Rule
 
@@ -167,28 +166,28 @@ py .\skills\wechat-article-workflow\scripts\ensure_dependencies.py
 ```text
 imgs/
 └── 文章标题/
-    ├── 00-source/
-    │   ├── 01-draft.md
-    │   ├── 02-polished.md
-    │   ├── 03-formatted.md
-    │   └── 04-with-images.md
-    ├── 01-planning/
-    │   ├── workflow-state.json
-    │   ├── rules-summary.md
-    │   ├── publish-checklist.md
+    ├── 01-原稿/
+    │   ├── 01-草稿.md
+    │   ├── 02-润色稿.md
+    │   ├── 03-整理稿.md
+    │   └── 04-配图稿.md
+    ├── 02-规划/
+    │   ├── 工作流状态.json
+    │   ├── 规则摘要.md
+    │   ├── 发布检查清单.md
     │   ├── outline.md
     │   └── batch.json
-    ├── 02-prompts/
-    │   ├── draft/
-    │   └── final/
-    ├── 03-assets/
-    │   ├── body-images/
-    │   └── cover-images/
-    ├── 04-output/
-    │   ├── previews/
-    │   └── publish/
-    └── 05-delivery/
-        └── selected-theme.txt
+    ├── 03-提示词/
+    │   ├── 草稿/
+    │   └── 定稿/
+    ├── 04-素材/
+    │   ├── 正文配图/
+    │   └── 封面配图/
+    ├── 05-排版/
+    │   ├── 预览版/
+    │   └── 发布版/
+    └── 06-发布/
+        └── 已选主题.txt
 ```
 
 这样做的目的：
@@ -271,8 +270,9 @@ imgs/
 
 - 只能使用用户选中的那一套主题
 - 只能使用对应的发布态 HTML
-- 投递前必须更新 `05-delivery/selected-theme.txt`
-- 投递前必须核对 `01-planning/publish-checklist.md`
+- 最终投递应优先调用我们自己的 `wechat-draft-publisher` skill，而不是复用宝玉默认发布 skill
+- 投递前必须更新 `06-发布/已选主题.txt`
+- 投递前必须核对 `02-规划/发布检查清单.md`
 - 投递前必须再次询问用户是否真正进入草稿箱
 - 如果用户只想“先准备好”，则停在 `prepare-only`，不要自动发稿
 

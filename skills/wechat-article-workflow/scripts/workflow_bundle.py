@@ -21,18 +21,18 @@ THEME_LABELS = {
 }
 
 WORKSPACE_DIRS = {
-    "source": "00-source",
-    "planning": "01-planning",
-    "prompts_root": "02-prompts",
-    "prompts_draft": "02-prompts/draft",
-    "prompts_final": "02-prompts/final",
-    "assets_root": "03-assets",
-    "body_images": "03-assets/body-images",
-    "cover_images": "03-assets/cover-images",
-    "output_root": "04-output",
-    "previews": "04-output/previews",
-    "publish": "04-output/publish",
-    "delivery": "05-delivery",
+    "source": "01-原稿",
+    "planning": "02-规划",
+    "prompts_root": "03-提示词",
+    "prompts_draft": "03-提示词/草稿",
+    "prompts_final": "03-提示词/定稿",
+    "assets_root": "04-素材",
+    "body_images": "04-素材/正文配图",
+    "cover_images": "04-素材/封面配图",
+    "output_root": "05-排版",
+    "previews": "05-排版/预览版",
+    "publish": "05-排版/发布版",
+    "delivery": "06-发布",
 }
 
 RULE_SUMMARY = """# Workflow Rules
@@ -132,20 +132,20 @@ def write_workspace_files(
     raw_markdown: str,
     title: str,
 ) -> None:
-    draft_path = workspace_paths["source"] / "01-draft.md"
+    draft_path = workspace_paths["source"] / "01-草稿.md"
     if not draft_path.exists():
         draft_path.write_text(raw_markdown, encoding="utf-8")
-    for name in ["02-polished.md", "03-formatted.md", "04-with-images.md"]:
+    for name in ["02-润色稿.md", "03-整理稿.md", "04-配图稿.md"]:
         placeholder = workspace_paths["source"] / name
         if not placeholder.exists():
             placeholder.write_text("", encoding="utf-8")
 
-    rules_path = workspace_paths["planning"] / "rules-summary.md"
+    rules_path = workspace_paths["planning"] / "规则摘要.md"
     rules_path.write_text(RULE_SUMMARY, encoding="utf-8")
 
-    publish_checklist_path = workspace_paths["planning"] / "publish-checklist.md"
+    publish_checklist_path = workspace_paths["planning"] / "发布检查清单.md"
     publish_checklist_path.write_text(
-        """# Publish Checklist
+        """# 发布检查清单
 
 - [ ] 已选择最终主题
 - [ ] 当前文件为发布态 HTML，而不是预览 HTML
@@ -161,11 +161,11 @@ def write_workspace_files(
         encoding="utf-8",
     )
 
-    selected_theme_path = workspace_paths["delivery"] / "selected-theme.txt"
+    selected_theme_path = workspace_paths["delivery"] / "已选主题.txt"
     if not selected_theme_path.exists():
         selected_theme_path.write_text("", encoding="utf-8")
 
-    state_path = workspace_paths["planning"] / "workflow-state.json"
+    state_path = workspace_paths["planning"] / "工作流状态.json"
     state = {
         "title": title,
         "stage": "html-bundle-ready",
@@ -180,10 +180,10 @@ def write_workspace_files(
             "草稿箱投递前",
         ],
         "artifacts": {
-            "draft": str(workspace_paths["source"] / "01-draft.md"),
-            "polished": str(workspace_paths["source"] / "02-polished.md"),
-            "formatted": str(workspace_paths["source"] / "03-formatted.md"),
-            "with_images": str(workspace_paths["source"] / "04-with-images.md"),
+            "draft": str(workspace_paths["source"] / "01-草稿.md"),
+            "polished": str(workspace_paths["source"] / "02-润色稿.md"),
+            "formatted": str(workspace_paths["source"] / "03-整理稿.md"),
+            "with_images": str(workspace_paths["source"] / "04-配图稿.md"),
             "publish_checklist": str(publish_checklist_path),
             "selected_theme": str(selected_theme_path),
         },
