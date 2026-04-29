@@ -1,0 +1,232 @@
+from __future__ import annotations
+
+import argparse
+import json
+import re
+from pathlib import Path
+from typing import Any
+
+
+THEME_LABELS = ["Claude", "纽约时报", "深度阅读", "Medium"]
+IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"}
+
+
+def load_state(state_path: Path) -> dict[str, Any]:
+    return json.loads(state_path.read_text(encoding="utf-8"))
+
+
+def add_issue(issues: list[dict[str, str]], code: str, message: str, severity: str = "blocker") -> None:
+    issues.append({"code": code, "message": message, "severity": severity})
+
+
+def file_has_content(path_str: str) -> bool:
+    path = Path(path_str)
+    return path.exists() and bool(path.read_text(encoding="utf-8").strip())
+
+
+def count_text_units(text: str) -> int:
+    normalized = re.sub(r"\s+", "", text)
+    return len(normalized)
+
+
+def is_visual_break_line(line: str) -> bool:
+    stripped = line.strip()
+    if not stripped:
+        return False
+    if stripped.startswith(("#", "![", ">", "|", "```", "<table", "<img", "<figure", "<blockquote")):
+        return True
+    if re.match(r"^(\d+\.|[-*+])\s+", stripped):
+        return True
+    return False
+
+
+def scan_markdown_visual_breaks(markdown: str, max_chars: int = 300) -> list[dict[str, Any]]:
+    issues: list[dict[str, Any]] = []
+    current_lines: list[str] = []
+    current_count = 0
+    start_line = 1
+
+    def flush(end_line: int) -> None:
+        nonlocal current_lines, current_count, start_line
+        if current_count > max_chars:
+            snippet = "".join(current_lines)[:40]
+            issues.append(
+                {
+                    "code": "long_plain_text_block",
+                    "message": f"第 {start_line}-{end_line} 行存在约 {current_count} 字连续纯文字，超过 {max_chars} 字。",
+                    "severity": "blocker",
+                    "count": current_count,
+                    "start_line": start_line,
+                    "end_line": end_line,
+                    "snippet": snippet,
+                }
+            )
+        current_lines = []
+        current_count = 0
+        start_line = end_line + 1
+
+    for line_number, raw_line in enumerate(markdown.splitlines(), start=1):
+        stripped = raw_line.strip()
+        if not stripped:
+            continue
+        if is_visual_break_line(raw_line):
+            flush(line_number - 1)
+            start_line = line_number + 1
+            continue
+        if not current_lines:
+            start_line = line_number
+        current_lines.append(stripped)
+        current_count += count_text_units(stripped)
+
+    flush(len(markdown.splitlines()))
+    return issues
+
+
+def validate_polish_review(state: dict[str, Any], issues: list[dict[str, str]]) -> None:
+    polished = state.get("artifacts", {}).get("polished", "")
+    if not file_has_content(polished):
+        add_issue(issues, "missing_polished_markdown", "润色稿不存在或仍为空，请先完成 02-润色稿.md。")
+
+
+def validate_markdown_review(state: dict[str, Any], issues: list[dict[str, str]]) -> None:
+    formatted_path = Path(state.get("artifacts", {}).get("formatted", ""))
+    if not file_has_content(str(formatted_path)):
+        add_issue(issues, "missing_formatted_markdown", "整理稿不存在或仍为空，请先完成 03-整理稿.md。")
+        return
+    text = formatted_path.read_text(encoding="utf-8")
+    if "title:" not in text and not re.search(r"^#\s+\S+", text, re.MULTILINE):
+        add_issue(issues, "missing_title_structure", "整理稿缺少标题或 frontmatter title。")
+
+
+def validate_image_count_review(state_path: Path, issues: list[dict[str, str]]) -> None:
+    confirm_path = state_path.parent / "配图数量确认.txt"
+    if not file_has_content(str(confirm_path)):
+        add_issue(issues, "missing_image_count_confirmation", "尚未确认本篇文章需要几张图，请先补 02-规划/配图数量确认.txt。")
+
+
+def validate_illustration_plan_review(state_path: Path, issues: list[dict[str, str]]) -> None:
+    planning_dir = state_path.parent
+    prompts_dir = state_path.parent.parent / "03-提示词" / "草稿"
+    if not file_has_content(str(planning_dir / "outline.md")):
+        add_issue(issues, "missing_outline", "缺少 02-规划/outline.md。")
+    if not file_has_content(str(planning_dir / "batch.json")):
+        add_issue(issues, "missing_batch_json", "缺少 02-规划/batch.json。")
+    prompt_files = [path for path in prompts_dir.glob("*") if path.is_file()]
+    if not prompt_files:
+        add_issue(issues, "missing_prompt_drafts", "03-提示词/草稿 目录下还没有 prompt 文件。")
+
+
+def validate_image_generation_review(state_path: Path, issues: list[dict[str, str]]) -> None:
+    body_images_dir = state_path.parent.parent / "04-素材" / "正文配图"
+    image_files = [path for path in body_images_dir.glob("*") if path.is_file() and path.suffix.lower() in IMAGE_EXTENSIONS]
+    if not image_files:
+        add_issue(issues, "missing_body_images", "正文配图目录为空，请先完成图片生成。")
+
+
+def validate_image_insert_review(state: dict[str, Any], issues: list[dict[str, Any]]) -> None:
+    with_images_path = Path(state.get("artifacts", {}).get("with_images", ""))
+    if not file_has_content(str(with_images_path)):
+        add_issue(issues, "missing_with_images_markdown", "配图稿不存在或仍为空，请先完成 04-配图稿.md。")
+        return
+    markdown = with_images_path.read_text(encoding="utf-8")
+    issues.extend(scan_markdown_visual_breaks(markdown))
+
+
+def validate_layout_review(state_path: Path, issues: list[dict[str, str]]) -> None:
+    article_dir = state_path.parent.parent
+    preview_dir = article_dir / "05-排版" / "预览版"
+    publish_dir = article_dir / "05-排版" / "发布版"
+    missing_themes: list[str] = []
+    for label in THEME_LABELS:
+        preview_path = preview_dir / f"最终排版-{label}.html"
+        publish_path = publish_dir / f"最终排版-{label}-发布版.html"
+        if not preview_path.exists() or not publish_path.exists():
+            missing_themes.append(label)
+    if missing_themes:
+        add_issue(
+            issues,
+            "missing_theme_outputs",
+            f"以下主题的预览版或发布版 HTML 缺失：{', '.join(missing_themes)}。",
+        )
+
+
+def validate_draft_publish_review(state: dict[str, Any], state_path: Path, issues: list[dict[str, str]]) -> None:
+    article_dir = state_path.parent.parent
+    selected_theme_path = Path(state.get("artifacts", {}).get("selected_theme", ""))
+    publish_checklist_path = Path(state.get("artifacts", {}).get("publish_checklist", ""))
+    if not file_has_content(str(selected_theme_path)):
+        add_issue(issues, "missing_selected_theme", "还没有最终选定主题，请先写入 06-发布/已选主题.txt。")
+        return
+    theme_name = selected_theme_path.read_text(encoding="utf-8").strip()
+    publish_path = article_dir / "05-排版" / "发布版" / f"最终排版-{theme_name}-发布版.html"
+    if not publish_path.exists():
+        add_issue(issues, "missing_selected_publish_html", f"缺少已选主题的发布版 HTML：{publish_path.name}。")
+    if not file_has_content(str(publish_checklist_path)):
+        add_issue(issues, "missing_publish_checklist", "发布检查清单不存在或仍为空。")
+
+
+def render_report(state: dict[str, Any], result: dict[str, Any]) -> str:
+    lines = [
+        "# 阶段检查报告",
+        "",
+        f"- 文章：{state.get('title', '')}",
+        f"- 阶段：{state.get('current_stage_label', '')}",
+        f"- 结果：{result['status']}",
+        "",
+    ]
+    if not result["issues"]:
+        lines.append("- 未发现阻塞项。")
+        lines.append("")
+        return "\n".join(lines)
+
+    lines.append("## 问题列表")
+    for item in result["issues"]:
+        lines.append(f"- [{item['severity']}] `{item['code']}` {item['message']}")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def validate_stage(state_path: Path) -> dict[str, Any]:
+    state = load_state(state_path)
+    stage_id = state.get("current_stage_id", "")
+    issues: list[dict[str, Any]] = []
+
+    if stage_id == "polish_review":
+        validate_polish_review(state, issues)
+    elif stage_id == "markdown_review":
+        validate_markdown_review(state, issues)
+    elif stage_id == "image_count_review":
+        validate_image_count_review(state_path, issues)
+    elif stage_id == "illustration_plan_review":
+        validate_illustration_plan_review(state_path, issues)
+    elif stage_id == "image_generation_review":
+        validate_image_generation_review(state_path, issues)
+    elif stage_id == "image_insert_review":
+        validate_image_insert_review(state, issues)
+    elif stage_id == "layout_review":
+        validate_layout_review(state_path, issues)
+    elif stage_id == "draft_publish_review":
+        validate_draft_publish_review(state, state_path, issues)
+
+    result = {
+        "stage_id": stage_id,
+        "stage_label": state.get("current_stage_label", ""),
+        "status": "blocked" if any(item["severity"] == "blocker" for item in issues) else "ok",
+        "issues": issues,
+    }
+    report_path = state_path.parent / "阶段检查报告.md"
+    report_path.write_text(render_report(state, result), encoding="utf-8")
+    result["report_file"] = str(report_path)
+    return result
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="校验公众号文章工作流当前阶段")
+    parser.add_argument("--state-path", required=True, help="工作流状态文件路径")
+    args = parser.parse_args()
+    result = validate_stage(Path(args.state_path))
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+if __name__ == "__main__":
+    main()

@@ -34,6 +34,26 @@ summary: 用于验证执行器。
 
 
 class WorkflowExecutorTests(unittest.TestCase):
+    def test_status_returns_validation_packet(self):
+        builder = load_module(BUILDER_MODULE_PATH, "workflow_bundle")
+        executor = load_module(EXECUTOR_MODULE_PATH, "workflow_executor")
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            markdown_path = temp_path / "draft.md"
+            image_root = temp_path / "imgs"
+            markdown_path.write_text(SAMPLE_MARKDOWN, encoding="utf-8")
+            (temp_path / "demo.png").write_bytes(b"fake-image")
+
+            result = builder.export_article_bundle(markdown_path, image_root)
+            state_path = Path(result["workspace"]["planning"]) / "工作流状态.json"
+            polished_path = Path(result["workspace"]["source"]) / "02-润色稿.md"
+            polished_path.write_text("# 润色稿\n\n已完成。", encoding="utf-8")
+
+            status = executor.get_status(state_path)
+
+            self.assertIn("validation", status)
+            self.assertEqual(status["validation"]["status"], "ok")
+
     def test_confirm_current_stage_advances_and_refreshes_brief(self):
         builder = load_module(BUILDER_MODULE_PATH, "workflow_bundle")
         executor = load_module(EXECUTOR_MODULE_PATH, "workflow_executor")
@@ -46,12 +66,47 @@ class WorkflowExecutorTests(unittest.TestCase):
 
             result = builder.export_article_bundle(markdown_path, image_root)
             state_path = Path(result["workspace"]["planning"]) / "工作流状态.json"
+            polished_path = Path(result["workspace"]["source"]) / "02-润色稿.md"
+            polished_path.write_text("# 润色稿\n\n润色完成。", encoding="utf-8")
 
             updated = executor.confirm_current_stage(state_path, note="润色完成")
 
             self.assertEqual(updated["state"]["current_stage_id"], "markdown_review")
             self.assertEqual(updated["packet"]["stage_id"], "markdown_review")
             self.assertIn("baoyu-format-markdown", updated["packet"]["recommended_skill"])
+
+    def test_confirm_current_stage_blocks_when_validation_has_blockers(self):
+        builder = load_module(BUILDER_MODULE_PATH, "workflow_bundle")
+        executor = load_module(EXECUTOR_MODULE_PATH, "workflow_executor")
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            markdown_path = temp_path / "draft.md"
+            image_root = temp_path / "imgs"
+            markdown_path.write_text(SAMPLE_MARKDOWN, encoding="utf-8")
+            (temp_path / "demo.png").write_bytes(b"fake-image")
+
+            result = builder.export_article_bundle(markdown_path, image_root)
+            state_path = Path(result["workspace"]["planning"]) / "工作流状态.json"
+
+            with self.assertRaisesRegex(RuntimeError, "仍有未处理的阻塞项"):
+                executor.confirm_current_stage(state_path)
+
+    def test_confirm_current_stage_allows_override_when_explicitly_requested(self):
+        builder = load_module(BUILDER_MODULE_PATH, "workflow_bundle")
+        executor = load_module(EXECUTOR_MODULE_PATH, "workflow_executor")
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            markdown_path = temp_path / "draft.md"
+            image_root = temp_path / "imgs"
+            markdown_path.write_text(SAMPLE_MARKDOWN, encoding="utf-8")
+            (temp_path / "demo.png").write_bytes(b"fake-image")
+
+            result = builder.export_article_bundle(markdown_path, image_root)
+            state_path = Path(result["workspace"]["planning"]) / "工作流状态.json"
+
+            updated = executor.confirm_current_stage(state_path, allow_issues=True)
+
+            self.assertEqual(updated["state"]["current_stage_id"], "markdown_review")
 
     def test_select_theme_updates_state_and_theme_file(self):
         builder = load_module(BUILDER_MODULE_PATH, "workflow_bundle")

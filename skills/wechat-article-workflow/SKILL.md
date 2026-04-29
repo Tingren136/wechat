@@ -32,6 +32,7 @@ description: Use when producing a long-form WeChat Official Account article from
 - `skills/wechat-article-workflow/scripts/workflow_state_manager.py`
 - `skills/wechat-article-workflow/scripts/workflow_stage_runner.py`
 - `skills/wechat-article-workflow/scripts/workflow_executor.py`
+- `skills/wechat-article-workflow/scripts/workflow_validator.py`
 
 ## When to Use
 
@@ -135,6 +136,8 @@ py .\skills\wechat-article-workflow\scripts\workflow_executor.py `
 
 - 不建议在 PowerShell 里用纯文本截取文章目录后，再手工拼接 `工作流状态.json`
 - 中文路径场景下，优先使用 `--json` 结果里的 `files.state_path`
+- `status` 会返回当前阶段校验结果，并写出 `02-规划/阶段检查报告.md`
+- `confirm` 默认不会跨过 blocker；只有显式传入 `--allow-issues` 时才允许带问题推进
 
 本机安装 skill：
 
@@ -317,6 +320,7 @@ imgs/
 - 阶段推进状态机脚本 `workflow_state_manager.py`
 - 当前阶段说明生成器 `workflow_stage_runner.py`
 - 阶段执行器 `workflow_executor.py`
+- 阶段校验器 `workflow_validator.py`
 
 当前仍未完成：
 

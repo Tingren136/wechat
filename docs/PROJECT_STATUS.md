@@ -29,7 +29,9 @@
 - 已封装阶段推进状态机脚本：`skills/wechat-article-workflow/scripts/workflow_state_manager.py`
 - 已封装当前阶段说明生成器：`skills/wechat-article-workflow/scripts/workflow_stage_runner.py`
 - 已封装阶段执行器：`skills/wechat-article-workflow/scripts/workflow_executor.py`
+- 已封装阶段校验器：`skills/wechat-article-workflow/scripts/workflow_validator.py`
 - 已补 `workflow_bundle.py --json` 机器可读输出，避免 PowerShell 捕获中文路径时损坏状态文件路径
+- 已把“300 字视觉中断规则”编码进校验器，并由执行器在确认前默认守门
 - 已安装到本机 `C:\Users\86156\.codex\skills\wechat-article-workflow`
 - 已把文章工作区升级为中文分层目录结构：`01-原稿 / 02-规划 / 03-提示词 / 04-素材 / 05-排版 / 06-发布`
 - 已拆出独立草稿箱发布 skill：`skills/wechat-draft-publisher`
@@ -74,6 +76,7 @@
 - 依赖自动补装目前以 repo 维度安装，后续仍可继续细化到更精确的 skill 级别
 - 草稿箱发布 skill 目前已固定职责边界，但真实投递脚本仍可继续补强
 - 当前执行器仍主要负责状态推进、主题写入和重导出，尚未接入更多自动阶段动作
+- 当前阶段校验仍以本地文件结构和基础内容检查为主，尚未直接编排外部子 skill 真正执行
 
 ## 最近一次关键排查
 

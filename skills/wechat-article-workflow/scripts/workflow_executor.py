@@ -24,17 +24,23 @@ def _article_dir_from_state(state: dict[str, Any]) -> Path:
 def get_status(state_path: Path) -> dict[str, Any]:
     state_module = load_module("workflow_state_manager.py", "workflow_state_manager")
     stage_runner = load_module("workflow_stage_runner.py", "workflow_stage_runner")
+    validator = load_module("workflow_validator.py", "workflow_validator")
     state = state_module.load_state(state_path)
     packet = stage_runner.generate_stage_packet(state_path)
-    return {"state": state, "packet": packet}
+    validation = validator.validate_stage(state_path)
+    return {"state": state, "packet": packet, "validation": validation}
 
 
-def confirm_current_stage(state_path: Path, note: str = "") -> dict[str, Any]:
+def confirm_current_stage(state_path: Path, note: str = "", allow_issues: bool = False) -> dict[str, Any]:
     state_module = load_module("workflow_state_manager.py", "workflow_state_manager")
     stage_runner = load_module("workflow_stage_runner.py", "workflow_stage_runner")
+    validator = load_module("workflow_validator.py", "workflow_validator")
+    validation = validator.validate_stage(state_path)
+    if validation["status"] == "blocked" and not allow_issues:
+        raise RuntimeError("当前阶段仍有未处理的阻塞项，请先查看阶段检查报告或显式允许带问题推进。")
     state = state_module.advance_stage(state_path, note=note)
     packet = stage_runner.generate_stage_packet(state_path)
-    return {"state": state, "packet": packet}
+    return {"state": state, "packet": packet, "validation": validation}
 
 
 def select_theme(state_path: Path, theme_name: str) -> dict[str, Any]:
@@ -66,6 +72,7 @@ def main() -> None:
     confirm_parser = subparsers.add_parser("confirm", help="确认当前阶段并推进")
     confirm_parser.add_argument("--state-path", required=True)
     confirm_parser.add_argument("--note", default="")
+    confirm_parser.add_argument("--allow-issues", action="store_true")
 
     theme_parser = subparsers.add_parser("set-theme", help="设置已选主题")
     theme_parser.add_argument("--state-path", required=True)
@@ -80,7 +87,7 @@ def main() -> None:
     if args.command == "status":
         result = get_status(state_path)
     elif args.command == "confirm":
-        result = confirm_current_stage(state_path, note=args.note)
+        result = confirm_current_stage(state_path, note=args.note, allow_issues=args.allow_issues)
     elif args.command == "set-theme":
         result = select_theme(state_path, theme_name=args.theme)
     else:
