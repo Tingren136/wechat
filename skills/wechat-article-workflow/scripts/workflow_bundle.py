@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
-import json
 import os
 import re
 import shutil
@@ -67,6 +66,16 @@ def load_publish_module():
         spec.loader.exec_module(module)
         return module
     raise FileNotFoundError("未找到可用的发布态导出器。")
+
+
+def load_state_module():
+    script_dir = Path(__file__).resolve().parent
+    module_path = script_dir / "workflow_state_manager.py"
+    spec = importlib.util.spec_from_file_location("workflow_state_manager", module_path)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
 
 
 def replace_markdown_image_paths(markdown: str, rename_map: dict[str, str]) -> str:
@@ -165,31 +174,17 @@ def write_workspace_files(
     if not selected_theme_path.exists():
         selected_theme_path.write_text("", encoding="utf-8")
 
+    state_module = load_state_module()
     state_path = workspace_paths["planning"] / "工作流状态.json"
-    state = {
-        "title": title,
-        "stage": "html-bundle-ready",
-        "required_confirmations": [
-            "润色完成后",
-            "Markdown 整理后",
-            "配图数量确认后",
-            "配图规划完成后",
-            "图片生成前",
-            "插图回正文后",
-            "4 套排版产出后",
-            "草稿箱投递前",
-        ],
-        "artifacts": {
-            "draft": str(workspace_paths["source"] / "01-草稿.md"),
-            "polished": str(workspace_paths["source"] / "02-润色稿.md"),
-            "formatted": str(workspace_paths["source"] / "03-整理稿.md"),
-            "with_images": str(workspace_paths["source"] / "04-配图稿.md"),
-            "publish_checklist": str(publish_checklist_path),
-            "selected_theme": str(selected_theme_path),
-        },
-        "workspace": {key: str(path) for key, path in workspace_paths.items()},
+    artifacts = {
+        "draft": str(workspace_paths["source"] / "01-草稿.md"),
+        "polished": str(workspace_paths["source"] / "02-润色稿.md"),
+        "formatted": str(workspace_paths["source"] / "03-整理稿.md"),
+        "with_images": str(workspace_paths["source"] / "04-配图稿.md"),
+        "publish_checklist": str(publish_checklist_path),
+        "selected_theme": str(selected_theme_path),
     }
-    state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+    state_module.initialize_state(state_path=state_path, title=title, artifacts=artifacts)
 
 
 def build_preview_html(publish_module: Any, normalized_markdown_path: Path, output_path: Path, theme_id: str, title: str) -> None:

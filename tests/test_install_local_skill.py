@@ -26,6 +26,7 @@ class InstallLocalSkillTests(unittest.TestCase):
                 installed = module.install_local_skill(target_root=target_root)
 
             self.assertTrue(installed.exists())
+            self.assertTrue((installed / "scripts" / "workflow_state_manager.py").exists())
             self.assertTrue((target_root / "wechat-draft-publisher").exists())
             self.assertTrue((target_root / "wechat-draft-publisher" / "SKILL.md").exists())
 

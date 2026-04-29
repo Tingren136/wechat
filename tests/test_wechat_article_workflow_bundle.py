@@ -1,4 +1,5 @@
 import importlib.util
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -70,6 +71,9 @@ class WechatArticleWorkflowBundleTests(unittest.TestCase):
             self.assertTrue((article_dir / "01-原稿" / "04-配图稿.md").exists())
             self.assertTrue((article_dir / "04-素材" / "正文配图" / "demo.png").exists())
             self.assertTrue((article_dir / "06-发布" / "已选主题.txt").exists())
+            state = json.loads((article_dir / "02-规划" / "工作流状态.json").read_text(encoding="utf-8"))
+            self.assertEqual(state["current_stage_id"], "polish_review")
+            self.assertEqual(state["current_stage_label"], "润色完成后确认")
 
             for theme_id, paths in result["themes"].items():
                 preview_path = Path(paths["preview"])
