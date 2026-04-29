@@ -1,3 +1,3 @@
 display_name: WeChat Article Workflow
-short_description: 公众号文章最小稳定闭环，输出 4 套预览与 4 套发布态 HTML
-default_prompt: 从一篇 Markdown 正文开始，按文章标题创建单独目录，并导出 Claude、纽约时报、深度阅读、Medium 四套预览与发布态 HTML。
+short_description: 公众号长文主工作流，含依赖检查、分阶段确认、4 套预览与发布态 HTML
+default_prompt: 从一篇公众号草稿开始，先检查依赖 skill，再按阶段推进润色、Markdown 整理、配图规划、图片插回正文，以及 Claude、纽约时报、深度阅读、Medium 四套预览与发布态 HTML 输出。

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
+import json
 import os
 import re
 import shutil
@@ -18,6 +19,37 @@ THEME_LABELS = {
     "deep-reading": "深度阅读",
     "medium": "Medium",
 }
+
+WORKSPACE_DIRS = {
+    "source": "00-source",
+    "planning": "01-planning",
+    "prompts_root": "02-prompts",
+    "prompts_draft": "02-prompts/draft",
+    "prompts_final": "02-prompts/final",
+    "assets_root": "03-assets",
+    "body_images": "03-assets/body-images",
+    "cover_images": "03-assets/cover-images",
+    "output_root": "04-output",
+    "previews": "04-output/previews",
+    "publish": "04-output/publish",
+    "delivery": "05-delivery",
+}
+
+RULE_SUMMARY = """# Workflow Rules
+
+- 这是半自动工作流，不是一键全自动发文。
+- 每个关键阶段都必须停下来等待人工确认。
+- 调用子 skill 时必须完整遵循其原始流程，不能跳过分析、确认或中间产物。
+- 固定保留 4 套主题：Claude、纽约时报、深度阅读、Medium。
+- 正文图片默认 4:3 横版。
+- 连续纯文字不应超过约 300 中文字，必要时必须补充视觉中断。
+- 视觉中断可以是图片、表格、引用块、对比卡、流程图、信息图。
+- 正文、prompt、图片、预览 HTML、发布态 HTML 都必须归档到文章标题目录内。
+- 发布公众号时只能使用发布态 HTML，不能直接使用预览页 HTML。
+- 图注正文显示应优先使用短版，不直接照搬完整 alt。
+- 图片圆角通过显示层裁切，不修改原图本身。
+- 固定结尾不插入签名图，不额外追加单独作者行。
+"""
 
 
 def load_publish_module():
@@ -62,7 +94,7 @@ def collect_local_image_sources(markdown: str) -> list[str]:
     return sources
 
 
-def safe_copy_images(markdown_path: Path, article_dir: Path, markdown: str) -> dict[str, str]:
+def safe_copy_images(markdown_path: Path, target_images_dir: Path, source_dir: Path, markdown: str) -> dict[str, str]:
     rename_map: dict[str, str] = {}
     used_names: set[str] = set()
     for source in collect_local_image_sources(markdown):
@@ -79,9 +111,85 @@ def safe_copy_images(markdown_path: Path, article_dir: Path, markdown: str) -> d
             candidate_name = f"{stem}-{counter}{suffix}"
 
         used_names.add(candidate_name)
-        rename_map[source] = candidate_name
-        shutil.copy2(source_path, article_dir / candidate_name)
+        target_path = target_images_dir / candidate_name
+        rename_map[source] = Path(os.path.relpath(target_path, source_dir)).as_posix()
+        shutil.copy2(source_path, target_path)
     return rename_map
+
+
+def ensure_workspace(article_dir: Path) -> dict[str, Path]:
+    workspace_paths: dict[str, Path] = {}
+    for key, relative in WORKSPACE_DIRS.items():
+        path = article_dir / Path(relative)
+        path.mkdir(parents=True, exist_ok=True)
+        workspace_paths[key] = path
+    return workspace_paths
+
+
+def write_workspace_files(
+    article_dir: Path,
+    workspace_paths: dict[str, Path],
+    raw_markdown: str,
+    title: str,
+) -> None:
+    draft_path = workspace_paths["source"] / "01-draft.md"
+    if not draft_path.exists():
+        draft_path.write_text(raw_markdown, encoding="utf-8")
+    for name in ["02-polished.md", "03-formatted.md", "04-with-images.md"]:
+        placeholder = workspace_paths["source"] / name
+        if not placeholder.exists():
+            placeholder.write_text("", encoding="utf-8")
+
+    rules_path = workspace_paths["planning"] / "rules-summary.md"
+    rules_path.write_text(RULE_SUMMARY, encoding="utf-8")
+
+    publish_checklist_path = workspace_paths["planning"] / "publish-checklist.md"
+    publish_checklist_path.write_text(
+        """# Publish Checklist
+
+- [ ] 已选择最终主题
+- [ ] 当前文件为发布态 HTML，而不是预览 HTML
+- [ ] 没有 `<style>`、`<script>`、复杂 class
+- [ ] 没有原生 `ol/ul/li`
+- [ ] 图注为短版显示图注
+- [ ] 无签名图
+- [ ] 无额外单独作者行
+- [ ] 长段纯文字已被视觉中断打断
+- [ ] 图片路径指向当前文章目录
+- [ ] 已完成草稿箱投递前人工确认
+""",
+        encoding="utf-8",
+    )
+
+    selected_theme_path = workspace_paths["delivery"] / "selected-theme.txt"
+    if not selected_theme_path.exists():
+        selected_theme_path.write_text("", encoding="utf-8")
+
+    state_path = workspace_paths["planning"] / "workflow-state.json"
+    state = {
+        "title": title,
+        "stage": "html-bundle-ready",
+        "required_confirmations": [
+            "润色完成后",
+            "Markdown 整理后",
+            "配图数量确认后",
+            "配图规划完成后",
+            "图片生成前",
+            "插图回正文后",
+            "4 套排版产出后",
+            "草稿箱投递前",
+        ],
+        "artifacts": {
+            "draft": str(workspace_paths["source"] / "01-draft.md"),
+            "polished": str(workspace_paths["source"] / "02-polished.md"),
+            "formatted": str(workspace_paths["source"] / "03-formatted.md"),
+            "with_images": str(workspace_paths["source"] / "04-with-images.md"),
+            "publish_checklist": str(publish_checklist_path),
+            "selected_theme": str(selected_theme_path),
+        },
+        "workspace": {key: str(path) for key, path in workspace_paths.items()},
+    }
+    state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def build_preview_html(publish_module: Any, normalized_markdown_path: Path, output_path: Path, theme_id: str, title: str) -> None:
@@ -131,19 +239,21 @@ def export_article_bundle(markdown_path: Path, image_root: Path, output_prefix: 
 
     article_dir = image_root / title
     article_dir.mkdir(parents=True, exist_ok=True)
+    workspace_paths = ensure_workspace(article_dir)
+    write_workspace_files(article_dir, workspace_paths, raw, title)
 
-    rename_map = safe_copy_images(markdown_path, article_dir, raw)
+    rename_map = safe_copy_images(markdown_path, workspace_paths["body_images"], workspace_paths["source"], raw)
     normalized_markdown = replace_markdown_image_paths(raw, rename_map)
 
-    with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".md", dir=article_dir, delete=False) as temp_file:
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".md", dir=workspace_paths["source"], delete=False) as temp_file:
         temp_file.write(normalized_markdown)
         normalized_markdown_path = Path(temp_file.name)
 
     themes_result: dict[str, dict[str, str]] = {}
     try:
         for theme_id, label in THEME_LABELS.items():
-            preview_path = article_dir / f"{output_prefix}-{label}.html"
-            publish_path = article_dir / f"{output_prefix}-{label}-发布版.html"
+            preview_path = workspace_paths["previews"] / f"{output_prefix}-{label}.html"
+            publish_path = workspace_paths["publish"] / f"{output_prefix}-{label}-发布版.html"
 
             build_preview_html(publish_module, normalized_markdown_path, preview_path, theme_id, title)
             publish_module.export_markdown_to_html(normalized_markdown_path, publish_path, theme_id=theme_id)
@@ -159,6 +269,7 @@ def export_article_bundle(markdown_path: Path, image_root: Path, output_prefix: 
     return {
         "title": title,
         "article_dir": str(article_dir),
+        "workspace": {key: str(path) for key, path in workspace_paths.items()},
         "themes": themes_result,
     }
 

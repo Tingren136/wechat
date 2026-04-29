@@ -68,6 +68,8 @@
   `powershell -File run-formatter.ps1 <markdown-file>`
 - 当前 skill 已安装到本机：
   `C:\Users\86156\.codex\skills\wechat-article-workflow`
+- 当前依赖清单在：
+  `skills/wechat-article-workflow/references/dependencies.json`
 
 ## 当前已经验证过的重要技术结论
 

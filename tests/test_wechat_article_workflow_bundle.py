@@ -36,7 +36,7 @@ summary: 用于验证 skill bundle 输出。
 
 
 class WechatArticleWorkflowBundleTests(unittest.TestCase):
-    def test_export_article_bundle_creates_article_directory_and_all_theme_outputs(self):
+    def test_export_article_bundle_creates_categorized_workspace_and_all_theme_outputs(self):
         module = load_module()
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
@@ -52,22 +52,42 @@ class WechatArticleWorkflowBundleTests(unittest.TestCase):
             self.assertEqual(Path(result["article_dir"]), article_dir)
             self.assertTrue(article_dir.exists())
             self.assertEqual(sorted(result["themes"].keys()), ["claude", "deep-reading", "medium", "nyt"])
+            self.assertTrue((article_dir / "00-source").exists())
+            self.assertTrue((article_dir / "01-planning").exists())
+            self.assertTrue((article_dir / "02-prompts" / "draft").exists())
+            self.assertTrue((article_dir / "02-prompts" / "final").exists())
+            self.assertTrue((article_dir / "03-assets" / "body-images").exists())
+            self.assertTrue((article_dir / "03-assets" / "cover-images").exists())
+            self.assertTrue((article_dir / "04-output" / "previews").exists())
+            self.assertTrue((article_dir / "04-output" / "publish").exists())
+            self.assertTrue((article_dir / "05-delivery").exists())
+            self.assertTrue((article_dir / "01-planning" / "workflow-state.json").exists())
+            self.assertTrue((article_dir / "01-planning" / "rules-summary.md").exists())
+            self.assertTrue((article_dir / "01-planning" / "publish-checklist.md").exists())
+            self.assertTrue((article_dir / "00-source" / "01-draft.md").exists())
+            self.assertTrue((article_dir / "00-source" / "02-polished.md").exists())
+            self.assertTrue((article_dir / "00-source" / "03-formatted.md").exists())
+            self.assertTrue((article_dir / "00-source" / "04-with-images.md").exists())
+            self.assertTrue((article_dir / "03-assets" / "body-images" / "demo.png").exists())
+            self.assertTrue((article_dir / "05-delivery" / "selected-theme.txt").exists())
 
             for theme_id, paths in result["themes"].items():
                 preview_path = Path(paths["preview"])
                 publish_path = Path(paths["publish"])
                 self.assertTrue(preview_path.exists(), theme_id)
                 self.assertTrue(publish_path.exists(), theme_id)
-                self.assertEqual(preview_path.parent, article_dir)
-                self.assertEqual(publish_path.parent, article_dir)
+                self.assertEqual(preview_path.parent, article_dir / "04-output" / "previews")
+                self.assertEqual(publish_path.parent, article_dir / "04-output" / "publish")
 
                 preview_html = preview_path.read_text(encoding="utf-8")
                 publish_html = publish_path.read_text(encoding="utf-8")
 
                 self.assertIn("技能测试文章", preview_html)
                 self.assertIn("技能测试文章", publish_html)
-                self.assertIn("demo.png", preview_html)
-                self.assertIn("demo.png", publish_html)
+                self.assertIn("../..", preview_html)
+                self.assertIn("../..", publish_html)
+                self.assertIn("body-images/demo.png", preview_html)
+                self.assertIn("body-images/demo.png", publish_html)
                 self.assertIn("预览版", preview_html)
                 self.assertNotIn("预览版", publish_html)
 

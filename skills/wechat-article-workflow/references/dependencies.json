@@ -1,0 +1,21 @@
+{
+  "repositories": [
+    {
+      "id": "khazix-skills",
+      "url": "https://github.com/KKKKhazix/khazix-skills",
+      "skills": [
+        "khazix-writer"
+      ]
+    },
+    {
+      "id": "baoyu-skills",
+      "url": "https://github.com/JimLiu/baoyu-skills",
+      "skills": [
+        "baoyu-format-markdown",
+        "baoyu-article-illustrator",
+        "baoyu-imagine",
+        "baoyu-post-to-wechat"
+      ]
+    }
+  ]
+}

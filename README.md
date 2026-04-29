@@ -63,20 +63,28 @@
 ```text
 imgs/
 └── 文章标题/
-    ├── outline.md
-    ├── batch.json
-    ├── prompts/
-    ├── prompts-draft/
-    ├── 01-xxx.png
-    ├── 02-xxx.png
-    ├── 最终排版-Claude.html
-    ├── 最终排版-纽约时报.html
-    ├── 最终排版-深度阅读.html
-    ├── 最终排版-Medium.html
-    ├── 最终排版-Claude-发布版.html
-    ├── 最终排版-纽约时报-发布版.html
-    ├── 最终排版-深度阅读-发布版.html
-    └── 最终排版-Medium-发布版.html
+    ├── 00-source/
+    │   ├── 01-draft.md
+    │   ├── 02-polished.md
+    │   ├── 03-formatted.md
+    │   └── 04-with-images.md
+    ├── 01-planning/
+    │   ├── workflow-state.json
+    │   ├── rules-summary.md
+    │   ├── publish-checklist.md
+    │   ├── outline.md
+    │   └── batch.json
+    ├── 02-prompts/
+    │   ├── draft/
+    │   └── final/
+    ├── 03-assets/
+    │   ├── body-images/
+    │   └── cover-images/
+    ├── 04-output/
+    │   ├── previews/
+    │   └── publish/
+    └── 05-delivery/
+        └── selected-theme.txt
 ```
 
 这样做是为了避免：
@@ -181,11 +189,18 @@ imgs/
 - 固化阶段化输出与人工确认点
 - 给后续 AI 一个明确的封装入口
 - 当前已配套最小稳定闭环脚本与本机安装脚本
+- 当前已配套依赖检查脚本，可自动检查缺失子 skill
 
 相关脚本：
 
 - `skills/wechat-article-workflow/scripts/workflow_bundle.py`
 - `skills/wechat-article-workflow/scripts/install_local_skill.py`
+- `skills/wechat-article-workflow/scripts/ensure_dependencies.py`
+
+依赖仓库：
+
+- `https://github.com/KKKKhazix/khazix-skills`
+- `https://github.com/JimLiu/baoyu-skills`
 
 ### 项目说明文档
 

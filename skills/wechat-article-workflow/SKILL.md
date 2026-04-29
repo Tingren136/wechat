@@ -28,6 +28,7 @@ description: Use when producing a long-form WeChat Official Account article from
 
 - `skills/wechat-article-workflow/scripts/workflow_bundle.py`
 - `skills/wechat-article-workflow/scripts/install_local_skill.py`
+- `skills/wechat-article-workflow/scripts/ensure_dependencies.py`
 
 ## When to Use
 
@@ -57,13 +58,42 @@ description: Use when producing a long-form WeChat Official Account article from
 ## Workflow
 
 1. 读取输入正文或草稿
-2. 如果正文尚未润色，先走 `khazix-writer`
-3. 如果 Markdown 尚未整理，先走 `baoyu-format-markdown`
-4. 为当前文章创建独立图片资产目录，目录名默认等于文章标题
-5. 如果正文已具备插图，先导出 4 套预览 HTML
-6. 同时导出 4 套对应主题的发布态 HTML
-7. 等待用户手动选择最终排版
-8. 后续再决定是否进入草稿箱投递
+2. 检查依赖 skill 是否齐全，缺失时优先自动补装
+3. 如果正文尚未润色，先走 `khazix-writer`
+4. 如果 Markdown 尚未整理，先走 `baoyu-format-markdown`
+5. 为当前文章创建独立图片资产目录，目录名默认等于文章标题
+6. 先确认本篇正文适合几张图，再走 `baoyu-article-illustrator`
+7. 输出配图规划、prompt 打包结果，并等待确认
+8. 图片生成阶段优先调用已安装的生图 skill，正文图默认 `4:3`
+9. 将图片插回正文，并检查 `300` 字内视觉中断规则
+10. 导出 4 套预览 HTML
+11. 导出 4 套对应主题的发布态 HTML
+12. 等待用户手动选择最终排版
+13. 对选中主题执行草稿箱发布前检查
+14. 只有在用户再次确认后，才进入草稿箱投递
+
+## Dependency Bootstrap
+
+在运行主工作流前，先检查这些依赖是否存在：
+
+- `khazix-writer`
+- `baoyu-format-markdown`
+- `baoyu-article-illustrator`
+- `baoyu-imagine`
+- `baoyu-post-to-wechat`
+
+检查与自动补装脚本：
+
+```powershell
+py .\skills\wechat-article-workflow\scripts\ensure_dependencies.py
+```
+
+规则：
+
+- 如果缺依赖，先补依赖，再继续工作流
+- 如果自动补装失败，要明确告诉用户缺什么、来自哪个 repo、建议执行什么安装命令
+- 依赖来源以 `references/dependencies.json` 为准
+- 不允许在依赖缺失状态下假装继续完整工作流
 
 ## Minimal Stable Entry
 
@@ -82,12 +112,44 @@ py .\skills\wechat-article-workflow\scripts\workflow_bundle.py `
 - 把正文引用到的本地图片复制进文章目录
 - 输出 4 套预览 HTML
 - 输出 4 套发布态 HTML
+- 自动生成工作流状态文件、规则摘要和发布检查清单
 
 本机安装 skill：
 
 ```powershell
 py .\skills\wechat-article-workflow\scripts\install_local_skill.py
 ```
+
+依赖检查与自动补装：
+
+```powershell
+py .\skills\wechat-article-workflow\scripts\ensure_dependencies.py
+```
+
+依赖来源清单：
+
+- `skills/wechat-article-workflow/references/dependencies.json`
+
+## Stage Outputs
+
+完整工作流里的关键中间产物应尽量固定命名：
+
+- `00-source/01-draft.md`
+- `00-source/02-polished.md`
+- `00-source/03-formatted.md`
+- `00-source/04-with-images.md`
+- `01-planning/workflow-state.json`
+- `01-planning/rules-summary.md`
+- `01-planning/publish-checklist.md`
+- `01-planning/outline.md`
+- `01-planning/batch.json`
+- `02-prompts/draft/`
+- `02-prompts/final/`
+- `03-assets/body-images/`
+- `03-assets/cover-images/`
+- `04-output/previews/`
+- `04-output/publish/`
+- `05-delivery/selected-theme.txt`
 
 ## Asset Directory Rule
 
@@ -105,17 +167,28 @@ py .\skills\wechat-article-workflow\scripts\install_local_skill.py
 ```text
 imgs/
 └── 文章标题/
-    ├── outline.md
-    ├── batch.json
-    ├── claude.html
-    ├── claude-publish.html
-    ├── nyt.html
-    ├── deep-reading.html
-    ├── medium.html
-    ├── 01-xxx.png
-    ├── 02-xxx.png
-    ├── prompts/
-    └── prompts-draft/
+    ├── 00-source/
+    │   ├── 01-draft.md
+    │   ├── 02-polished.md
+    │   ├── 03-formatted.md
+    │   └── 04-with-images.md
+    ├── 01-planning/
+    │   ├── workflow-state.json
+    │   ├── rules-summary.md
+    │   ├── publish-checklist.md
+    │   ├── outline.md
+    │   └── batch.json
+    ├── 02-prompts/
+    │   ├── draft/
+    │   └── final/
+    ├── 03-assets/
+    │   ├── body-images/
+    │   └── cover-images/
+    ├── 04-output/
+    │   ├── previews/
+    │   └── publish/
+    └── 05-delivery/
+        └── selected-theme.txt
 ```
 
 这样做的目的：
@@ -151,11 +224,13 @@ imgs/
 以下节点必须允许用户确认：
 
 1. 润色完成后
-2. 配图数量确认后
-3. 配图规划完成后
-4. 图片生成前
-5. 4 套排版产出后
-6. 草稿箱投递前
+2. Markdown 整理完成后
+3. 配图数量确认后
+4. 配图规划完成后
+5. 图片生成前
+6. 图片插回正文后
+7. 4 套排版产出后
+8. 草稿箱投递前
 
 ## Reading Rhythm Rule
 
@@ -190,6 +265,17 @@ imgs/
 
 目标不是“平均分配图片”，而是“让读者读得下去”。
 
+## Draft Gate
+
+草稿箱投递必须经过单独保护层：
+
+- 只能使用用户选中的那一套主题
+- 只能使用对应的发布态 HTML
+- 投递前必须更新 `05-delivery/selected-theme.txt`
+- 投递前必须核对 `01-planning/publish-checklist.md`
+- 投递前必须再次询问用户是否真正进入草稿箱
+- 如果用户只想“先准备好”，则停在 `prepare-only`，不要自动发稿
+
 ## Current Prototype Sources
 
 - 项目说明：`wechat-article-workflow-project/README.md`
@@ -203,6 +289,8 @@ imgs/
 
 - 最小稳定闭环脚本 `workflow_bundle.py`
 - 本机安装脚本 `install_local_skill.py`
+- 依赖检查脚本 `ensure_dependencies.py`
+- 分层文章工作区目录结构
 
 当前仍未完成：
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import shutil
 from pathlib import Path
+import subprocess
 
 
 def copy_tree(source: Path, target: Path) -> None:
@@ -29,7 +30,21 @@ def install_local_skill(target_root: Path | None = None) -> Path:
     target_scripts_dir = target_skill_dir / "scripts"
     target_scripts_dir.mkdir(parents=True, exist_ok=True)
     shutil.copy2(exporter_path, target_scripts_dir / "publish_export_standalone.py")
+    _run_dependency_bootstrap(target_scripts_dir / "ensure_dependencies.py")
     return target_skill_dir
+
+
+def _run_dependency_bootstrap(ensure_script: Path) -> None:
+    try:
+        subprocess.run(
+            ["py", str(ensure_script)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        pass
 
 
 def main() -> None:

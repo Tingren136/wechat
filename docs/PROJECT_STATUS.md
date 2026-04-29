@@ -25,7 +25,9 @@
 - 已用真实文章重新上传公众号草稿箱验证新的发布态链路
 - 已封装 skill 最小稳定闭环脚本：`skills/wechat-article-workflow/scripts/workflow_bundle.py`
 - 已封装本机安装脚本：`skills/wechat-article-workflow/scripts/install_local_skill.py`
+- 已封装依赖检查脚本：`skills/wechat-article-workflow/scripts/ensure_dependencies.py`
 - 已安装到本机 `C:\Users\86156\.codex\skills\wechat-article-workflow`
+- 已把文章工作区升级为分层目录结构：source / planning / prompts / assets / output / delivery
 
 ## 已废弃方向
 
@@ -64,6 +66,7 @@
 - `baoyu-format-markdown` 仍依赖外部 `autocorrect-node`，后续最好补成本地锁定依赖或统一 runner
 - 当前导出脚本文件名仍叫 `claude_publish_export.py`，但实际已支持 4 套主题，命名有误导性
 - 当前最小稳定闭环只覆盖“Markdown -> 4 套预览 + 4 套发布态 HTML”，还没把润色、生图、发稿串成一个执行器
+- 依赖自动补装目前以 repo 维度安装，后续仍可继续细化到更精确的 skill 级别
 
 ## 最近一次关键排查
 
