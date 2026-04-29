@@ -28,6 +28,8 @@
 - 已封装依赖检查脚本：`skills/wechat-article-workflow/scripts/ensure_dependencies.py`
 - 已封装阶段推进状态机脚本：`skills/wechat-article-workflow/scripts/workflow_state_manager.py`
 - 已封装当前阶段说明生成器：`skills/wechat-article-workflow/scripts/workflow_stage_runner.py`
+- 已封装阶段执行器：`skills/wechat-article-workflow/scripts/workflow_executor.py`
+- 已补 `workflow_bundle.py --json` 机器可读输出，避免 PowerShell 捕获中文路径时损坏状态文件路径
 - 已安装到本机 `C:\Users\86156\.codex\skills\wechat-article-workflow`
 - 已把文章工作区升级为中文分层目录结构：`01-原稿 / 02-规划 / 03-提示词 / 04-素材 / 05-排版 / 06-发布`
 - 已拆出独立草稿箱发布 skill：`skills/wechat-draft-publisher`
@@ -71,6 +73,7 @@
 - 当前最小稳定闭环只覆盖“Markdown -> 4 套预览 + 4 套发布态 HTML”，还没把润色、生图、发稿串成一个执行器
 - 依赖自动补装目前以 repo 维度安装，后续仍可继续细化到更精确的 skill 级别
 - 草稿箱发布 skill 目前已固定职责边界，但真实投递脚本仍可继续补强
+- 当前执行器仍主要负责状态推进、主题写入和重导出，尚未接入更多自动阶段动作
 
 ## 最近一次关键排查
 
@@ -99,3 +102,9 @@
 2. 先把规则补齐到 GitHub 文档闭环
 3. 整理多主题发布态导出脚本与文档命名
 4. 再逐步封装为通用 skill
+
+## 最近一次入口层修复
+
+- 之前真实验收卡住，不是状态机本身错误，而是 PowerShell 直接接收 `workflow_bundle.py` 打印的中文目录字符串时，后续再拼 `工作流状态.json` 容易出现乱码或路径损坏
+- 已把 `workflow_bundle.py` 补成支持 `--json` 输出，直接返回 `article_dir`、`workspace`、`files.state_path`、`themes`
+- 后续真实验收与自动化脚本都应优先读取 `files.state_path`，不要再靠纯文本输出手工拼接状态文件路径

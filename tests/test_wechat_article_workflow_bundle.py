@@ -1,5 +1,7 @@
 import importlib.util
 import json
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -75,6 +77,9 @@ class WechatArticleWorkflowBundleTests(unittest.TestCase):
             state = json.loads((article_dir / "02-规划" / "工作流状态.json").read_text(encoding="utf-8"))
             self.assertEqual(state["current_stage_id"], "polish_review")
             self.assertEqual(state["current_stage_label"], "润色完成后确认")
+            self.assertEqual(Path(result["files"]["state_path"]), article_dir / "02-规划" / "工作流状态.json")
+            self.assertEqual(Path(result["files"]["instruction_file"]), article_dir / "02-规划" / "当前阶段说明.md")
+            self.assertEqual(Path(result["files"]["selected_theme_file"]), article_dir / "06-发布" / "已选主题.txt")
 
             for theme_id, paths in result["themes"].items():
                 preview_path = Path(paths["preview"])
@@ -95,6 +100,34 @@ class WechatArticleWorkflowBundleTests(unittest.TestCase):
                 self.assertIn("正文配图/demo.png", publish_html)
                 self.assertIn("预览版", preview_html)
                 self.assertNotIn("预览版", publish_html)
+
+    def test_cli_json_output_exposes_state_path_for_chinese_paths(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            markdown_path = temp_path / "draft.md"
+            image_root = temp_path / "imgs"
+            markdown_path.write_text(SAMPLE_MARKDOWN, encoding="utf-8")
+            (temp_path / "demo.png").write_bytes(b"fake-image")
+
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(MODULE_PATH),
+                    str(markdown_path),
+                    "--image-root",
+                    str(image_root),
+                    "--json",
+                ],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+
+            payload = json.loads(completed.stdout)
+            article_dir = image_root / "技能测试文章"
+            self.assertEqual(Path(payload["article_dir"]), article_dir)
+            self.assertEqual(Path(payload["files"]["state_path"]), article_dir / "02-规划" / "工作流状态.json")
+            self.assertTrue(Path(payload["files"]["state_path"]).exists())
 
 
 if __name__ == "__main__":

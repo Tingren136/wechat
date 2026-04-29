@@ -31,6 +31,7 @@ description: Use when producing a long-form WeChat Official Account article from
 - `skills/wechat-article-workflow/scripts/ensure_dependencies.py`
 - `skills/wechat-article-workflow/scripts/workflow_state_manager.py`
 - `skills/wechat-article-workflow/scripts/workflow_stage_runner.py`
+- `skills/wechat-article-workflow/scripts/workflow_executor.py`
 
 ## When to Use
 
@@ -103,7 +104,8 @@ py .\skills\wechat-article-workflow\scripts\ensure_dependencies.py
 ```powershell
 py .\skills\wechat-article-workflow\scripts\workflow_bundle.py `
   "H:\3.写公众号素材\某篇文章.md" `
-  --image-root "H:\3.写公众号素材\imgs"
+  --image-root "H:\3.写公众号素材\imgs" `
+  --json
 ```
 
 这条命令会：
@@ -114,6 +116,25 @@ py .\skills\wechat-article-workflow\scripts\workflow_bundle.py `
 - 输出 4 套预览 HTML
 - 输出 4 套发布态 HTML
 - 自动生成工作流状态文件、规则摘要和发布检查清单
+- 同时返回 `files.state_path`，便于后续执行器稳定读取中文路径
+
+推荐后续执行方式：
+
+```powershell
+$result = py .\skills\wechat-article-workflow\scripts\workflow_bundle.py `
+  "H:\3.写公众号素材\某篇文章.md" `
+  --image-root "H:\3.写公众号素材\imgs" `
+  --json | ConvertFrom-Json
+
+py .\skills\wechat-article-workflow\scripts\workflow_executor.py `
+  status `
+  --state-path $result.files.state_path
+```
+
+说明：
+
+- 不建议在 PowerShell 里用纯文本截取文章目录后，再手工拼接 `工作流状态.json`
+- 中文路径场景下，优先使用 `--json` 结果里的 `files.state_path`
 
 本机安装 skill：
 
@@ -295,6 +316,7 @@ imgs/
 - 分层文章工作区目录结构
 - 阶段推进状态机脚本 `workflow_state_manager.py`
 - 当前阶段说明生成器 `workflow_stage_runner.py`
+- 阶段执行器 `workflow_executor.py`
 
 当前仍未完成：
 

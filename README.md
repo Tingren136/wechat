@@ -198,6 +198,7 @@ imgs/
 - `skills/wechat-article-workflow/scripts/ensure_dependencies.py`
 - `skills/wechat-article-workflow/scripts/workflow_state_manager.py`
 - `skills/wechat-article-workflow/scripts/workflow_stage_runner.py`
+- `skills/wechat-article-workflow/scripts/workflow_executor.py`
 
 依赖仓库：
 
@@ -212,6 +213,7 @@ imgs/
 
 - 公众号草稿箱最后一跳应优先使用我们自己的 `wechat-draft-publisher`
 - 不再把 `baoyu-post-to-wechat` 作为这条工作流的核心依赖
+- `workflow_bundle.py` 在脚本化调用时应优先配合 `--json` 使用，再从返回结果读取 `files.state_path`
 
 ### 项目说明文档
 

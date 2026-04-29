@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
+import json
 import os
 import re
 import shutil
@@ -149,7 +150,7 @@ def write_workspace_files(
     workspace_paths: dict[str, Path],
     raw_markdown: str,
     title: str,
-) -> None:
+) -> dict[str, str]:
     draft_path = workspace_paths["source"] / "01-草稿.md"
     if not draft_path.exists():
         draft_path.write_text(raw_markdown, encoding="utf-8")
@@ -195,7 +196,12 @@ def write_workspace_files(
         "selected_theme": str(selected_theme_path),
     }
     state_module.initialize_state(state_path=state_path, title=title, artifacts=artifacts)
-    stage_runner_module.generate_stage_packet(state_path)
+    packet = stage_runner_module.generate_stage_packet(state_path)
+    return {
+        "state_path": str(state_path),
+        "instruction_file": packet["instruction_file"],
+        "selected_theme_file": str(selected_theme_path),
+    }
 
 
 def build_preview_html(publish_module: Any, normalized_markdown_path: Path, output_path: Path, theme_id: str, title: str) -> None:
@@ -246,7 +252,7 @@ def export_article_bundle(markdown_path: Path, image_root: Path, output_prefix: 
     article_dir = image_root / title
     article_dir.mkdir(parents=True, exist_ok=True)
     workspace_paths = ensure_workspace(article_dir)
-    write_workspace_files(article_dir, workspace_paths, raw, title)
+    workspace_files = write_workspace_files(article_dir, workspace_paths, raw, title)
 
     rename_map = safe_copy_images(markdown_path, workspace_paths["body_images"], workspace_paths["source"], raw)
     normalized_markdown = replace_markdown_image_paths(raw, rename_map)
@@ -276,6 +282,7 @@ def export_article_bundle(markdown_path: Path, image_root: Path, output_prefix: 
         "title": title,
         "article_dir": str(article_dir),
         "workspace": {key: str(path) for key, path in workspace_paths.items()},
+        "files": workspace_files,
         "themes": themes_result,
     }
 
@@ -285,10 +292,14 @@ def main() -> None:
     parser.add_argument("markdown", help="输入 Markdown 文件路径")
     parser.add_argument("--image-root", required=True, help="文章图片根目录，例如 H:\\3.写公众号素材\\imgs")
     parser.add_argument("--prefix", default="最终排版", help="输出文件名前缀")
+    parser.add_argument("--json", action="store_true", help="以 JSON 输出结果，便于脚本读取中文路径")
     args = parser.parse_args()
 
     result = export_article_bundle(Path(args.markdown), Path(args.image_root), output_prefix=args.prefix)
-    print(result["article_dir"])
+    if args.json:
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+    else:
+        print(result["article_dir"])
 
 
 if __name__ == "__main__":
