@@ -1,64 +1,197 @@
-# WeChat Article Workflow Project
+# WeChat Article Workflow
 
-一个面向公众号长文生产的半自动化工作流项目说明。
+一个可以复用、可以分享的“公众号长文生产主 skill”仓库。
 
-目标不是“全自动一键发文”，而是把你现在已经跑通、并且确认有效的协作流程，整理成一个可复用、可分享、可继续开发的项目基础包。
+它的目标不是“一键全自动发文”，而是把已经跑通的公众号文章工作流，整理成一个别人可以安装、调用、继续协作的大 skill。
 
-## 项目目标
+## 它能做什么
 
-- 保留“人确认每一步”的工作方式
-- 固化 4 套 Wechat 正文排版主题
-- 让文章润色、配图规划、提示词打包、正文配图、HTML 排版尽量自动化
-- 为后续封装成独立 skill 做准备
+安装后，主 skill `wechat-article-workflow` 可以围绕一篇文章，按阶段组织这些步骤：
 
-## 当前固定规则总表
+1. 润色正文
+2. 整理 Markdown
+3. 确认配图数量
+4. 生成配图规划与 prompt
+5. 生成正文图片
+6. 把图片插回正文
+7. 输出 4 套公众号排版
+8. 进入发布前检查
 
-这些规则已经在真实跑通中反复确认，后续不应靠记忆口头传递：
+这个 workflow 已经固定了这些规则：
 
-- 这是“半自动工作流”，不是“一键全自动发文”
-- 关键阶段必须允许人工确认，不能为了提速跳过
-- 编排子 skill 时，必须完整遵循子 skill 原始流程，不能只拿结果、跳过分析或跳过确认
-- 固定只保留 4 套正文主题：`Claude`、`纽约时报`、`深度阅读`、`Medium`
-- 不再回到宝玉官方主题路线
-- 正文图片默认 `4:3` 横版
-- 正文中连续纯文字区段不应超过约 `300` 中文字，必须主动加入视觉中断
-- 视觉中断不一定只能是真图片，也可以是表格、引用块、对比卡、流程图、信息图
-- 每篇文章的图片与 HTML 资产必须放在“文章同名目录”中，不能与其他文章混放
-- 每篇文章默认同时产出 4 套预览 HTML，以及对应主题的发布态 HTML
-- 发布公众号时不能直接使用浏览器预览页 HTML，必须使用“发布态 HTML”
-- 图片图注正文显示应优先用短版，不直接照搬完整 `alt`
-- 正文图片圆角优先通过显示层容器裁切实现，不直接改原图
-- 固定结尾不再插入签名图，也不再额外追加单独作者行
+- 关键阶段必须停下来让人确认
+- 正文固定输出 4 套主题：`Claude`、`纽约时报`、`深度阅读`、`Medium`
+- 正文图片默认 `4:3`
+- 连续纯文字区段不应超过约 `300` 中文字
+- 每篇文章的素材、Markdown、HTML 必须放在“文章标题同名目录”里
+- 发布公众号时必须使用“发布态 HTML”，不能直接拿预览页发稿
 
-## 当前确认的工作流
+## 适合谁
 
-1. 用户先获得一篇正文草稿
-2. 使用 `khazix-writer` 做长文润色
-3. 使用 `baoyu-format-markdown` 统一 Markdown 结构
-4. 为当前文章创建一个“文章同名目录”用于承载图片、HTML、prompt 等资产
-5. 调用 `baoyu-article-illustrator` 前，先确认本篇正文适合几张图，再分析正文插图位置并输出配图建议与提示词
-6. 生成正文配图，正文图默认使用 `4:3` 横版
-7. 将图片插回正文，并检查长段纯文字是否已经被足够打断
-8. 一次性输出 4 套 Wechat HTML 排版供手动选择
-9. 选中的主题再导出一份发布态 HTML
-10. 后续再进入草稿箱发布阶段
+适合这些人：
 
-## 关键确认点
+- 已经有一篇公众号草稿，想按固定流程继续打磨
+- 想把“润色、配图、排版、发布准备”统一收进一个主 skill
+- 希望保留人工确认，而不是完全黑箱自动发文
 
-这些确认点必须保留：
+不适合这些场景：
 
-1. 润色完成后确认
-2. 配图数量确认
-3. 配图规划完成后确认
-4. 图片正式生成前确认
-5. 4 套排版产出后确认最终主题
-6. 草稿箱投递前确认
+- 只想单独生图
+- 只想单独排版
+- 只想做封面
+- 希望完全不确认、一步自动发出去
 
-## 单文章目录规则
+## 仓库里最重要的东西
 
-图片与排版相关资产统一按“单文章单目录”管理。
+- 主 skill：`skills/wechat-article-workflow`
+- 发布 skill：`skills/wechat-draft-publisher`
+- 安装脚本：`skills/wechat-article-workflow/scripts/install_local_skill.py`
+- 依赖检查脚本：`skills/wechat-article-workflow/scripts/ensure_dependencies.py`
+- 工作流打包脚本：`skills/wechat-article-workflow/scripts/workflow_bundle.py`
+- 工作流执行器：`skills/wechat-article-workflow/scripts/workflow_executor.py`
 
-推荐结构：
+## 依赖的外部 skill
+
+这个主 skill 不会把所有能力都硬写死，它会依赖一些现成 skill。
+
+当前默认依赖：
+
+- `khazix-writer`
+- `baoyu-format-markdown`
+- `baoyu-article-illustrator`
+- `baoyu-imagine`
+
+来源仓库：
+
+- `https://github.com/KKKKhazix/khazix-skills`
+- `https://github.com/JimLiu/baoyu-skills`
+
+依赖清单文件：
+
+- `skills/wechat-article-workflow/references/dependencies.json`
+
+## 怎么安装
+
+### 1. 克隆这个仓库
+
+```powershell
+git clone https://github.com/Tingren136/wechat.git
+cd wechat
+```
+
+### 2. 安装主 skill 到本机 skills 目录
+
+```powershell
+py .\skills\wechat-article-workflow\scripts\install_local_skill.py
+```
+
+这个脚本会做两件事：
+
+- 安装主 skill `wechat-article-workflow`
+- 一起安装 `wechat-draft-publisher`
+
+默认安装位置：
+
+- `C:\Users\你的用户名\.codex\skills\wechat-article-workflow`
+- `C:\Users\你的用户名\.codex\skills\wechat-draft-publisher`
+
+### 3. 检查并补装依赖 skill
+
+```powershell
+py .\skills\wechat-article-workflow\scripts\ensure_dependencies.py
+```
+
+如果缺少依赖，它会尽量自动补装；如果补装失败，也会告诉你缺哪个 skill、来自哪个仓库。
+
+## 怎么调用
+
+最简单的入口不是一口气自动跑完整流程，而是先初始化一篇文章的工作区。
+
+### 第一步：初始化文章工作区
+
+```powershell
+py .\skills\wechat-article-workflow\scripts\workflow_bundle.py `
+  "H:\3.写公众号素材\某篇文章.md" `
+  --image-root "H:\3.写公众号素材\imgs" `
+  --json
+```
+
+这一步会：
+
+- 读取文章标题
+- 创建文章同名目录
+- 复制正文引用到的本地图片
+- 生成 4 套预览 HTML
+- 生成 4 套发布态 HTML
+- 生成状态文件、规则摘要、检查清单
+
+### 第二步：查看当前阶段
+
+```powershell
+$result = py .\skills\wechat-article-workflow\scripts\workflow_bundle.py `
+  "H:\3.写公众号素材\某篇文章.md" `
+  --image-root "H:\3.写公众号素材\imgs" `
+  --json | ConvertFrom-Json
+
+py .\skills\wechat-article-workflow\scripts\workflow_executor.py `
+  status `
+  --state-path $result.files.state_path
+```
+
+`status` 会输出：
+
+- 当前阶段
+- 当前阶段校验结果
+- `next_steps`
+- `suggested_commands`
+
+同时还会在文章目录里写出：
+
+- `02-规划/当前阶段说明.md`
+- `02-规划/阶段检查报告.md`
+
+### 第三步：确认并推进下一阶段
+
+```powershell
+py .\skills\wechat-article-workflow\scripts\workflow_executor.py `
+  confirm `
+  --state-path "你的工作流状态.json路径"
+```
+
+默认规则：
+
+- 如果当前阶段还有 blocker，就不会推进
+- 如果你确实要强行推进，才显式使用：
+
+```powershell
+py .\skills\wechat-article-workflow\scripts\workflow_executor.py `
+  confirm `
+  --state-path "你的工作流状态.json路径" `
+  --allow-issues
+```
+
+### 第四步：刷新排版
+
+如果你已经完成配图稿，希望重新导出 4 套排版：
+
+```powershell
+py .\skills\wechat-article-workflow\scripts\workflow_executor.py `
+  refresh-layouts `
+  --state-path "你的工作流状态.json路径"
+```
+
+### 第五步：设置最终主题
+
+```powershell
+py .\skills\wechat-article-workflow\scripts\workflow_executor.py `
+  set-theme `
+  --state-path "你的工作流状态.json路径" `
+  --theme "Claude"
+```
+
+## 调用后的目录长什么样
+
+每篇文章都会整理成一个中文目录结构：
 
 ```text
 imgs/
@@ -70,10 +203,10 @@ imgs/
     │   └── 04-配图稿.md
     ├── 02-规划/
     │   ├── 工作流状态.json
+    │   ├── 当前阶段说明.md
+    │   ├── 阶段检查报告.md
     │   ├── 规则摘要.md
-    │   ├── 发布检查清单.md
-    │   ├── outline.md
-    │   └── batch.json
+    │   └── 发布检查清单.md
     ├── 03-提示词/
     │   ├── 草稿/
     │   └── 定稿/
@@ -87,201 +220,50 @@ imgs/
         └── 已选主题.txt
 ```
 
-这样做是为了避免：
+## 外部使用时要知道的边界
 
-- 多篇文章图片编号冲突
-- prompt 和旧文章混放
-- HTML 挪位置后图片路径失效
-- 后续 AI 接手时不知道最终产物落在哪里
+这个仓库已经能作为“主 skill 仓库”分享出去，但它不是完全无依赖的一键魔法按钮。
 
-## 当前新增的发布链路结论
+别人从 GitHub 下载后，想成功调用它，通常还需要：
 
-这轮真实验证后，已经确认：
+- 本地已经能使用 Codex / Claude Code 的 skill 目录
+- 已安装依赖 skill
+- 有自己的图片生成环境
+- 如果要进公众号草稿箱，还要有自己的发布环境或账号配置
 
-- “浏览器预览页 HTML” 不能直接作为公众号 API 发稿输入
-- 真正可用的是“发布态 HTML”，也就是：
-  - 不依赖 `<style>` 标签
-  - 不依赖 `<script>`
-  - 尽量不依赖 class
-  - 结构尽量保守，适配微信草稿箱过滤与重排
-- 4 套主题都已经接入同一个发布态导出器：
-  `scripts/claude_publish_export.py`
-- 导出器已经配套测试：
-  `tests/test_claude_publish_export.py`
-- 图片图注显示不再直接照搬长 `alt`
-- 正文图片使用“圆角容器裁切”的显示方案，但不会改动原图文件本身
+所以它现在的定位是：
 
-## 当前固定的 4 套排版
+- `可以分享`
+- `可以安装`
+- `可以调用`
+- `可以跑通完整阶段化流程`
+- `但不是零配置、零依赖、零确认的一键全自动发稿器`
 
-- `Claude`
-- `纽约时报`
-- `深度阅读`
-- `Medium`
+## 现在已经跑通了哪些关键能力
 
-策略已经确定：
+- 主 skill 本机可安装
+- 依赖可检查、可补装
+- 文章工作区可自动初始化
+- 4 套主题排版可导出
+- 发布态 HTML 已跑通
+- 关键阶段有状态机
+- 阶段有校验器
+- 阶段有下一步动作建议
+- 发布前有单独 skill 边界
 
-- 不再继续收敛成单一模板
-- 每篇文章默认同时产出这 4 套 HTML
-- 用户手动选一套作为最终正式版
+## 建议别人怎么理解这个仓库
 
-## 当前已完成的成果
+最简单的理解方式就是：
 
-### 1. 发稿链路已跑通
+> 这是一个“公众号长文生产主 skill 仓库”，不是单一功能脚本仓库。
 
-已经成功跑通过“发到微信公众号草稿箱”的真实链路。
+它最重要的价值不是某一个命令，而是把已经验证过的写作工作流收束成了一个统一入口。
 
-补充说明：
+## 补充文档
 
-- 已经不再直接拿预览页发稿
-- 当前实际可用方案是：
-  `Markdown -> 选定主题的发布态 HTML -> wechat-api.ts -> 公众号草稿箱`
-- 进入草稿箱前，仍然应保留最后一次人工确认
-
-### 2. 排版预览原型已完成
-
-当前预览目录：
-
-`D:\cc project\新建文件夹 (2)\wechat-theme-previews`
-
-入口文件：
-
-`D:\cc project\新建文件夹 (2)\wechat-theme-previews\index.html`
-
-已生成内容：
-
-- 4 套自定义 Wechat 主题预览
-- 同一篇测试文章的统一对比页面
-- 图注统一处理
-- 表格样式对比
-- 正文宽度、图片说明和阅读节奏可以集中比较
-
-### 3. 文章与素材测试集已建立
-
-测试正文：
-
-`H:\3.写公众号素材\别再让 AI 直接写正文了_卡兹克版.wechat.md`
-
-测试图片目录：
-
-`H:\3.写公众号素材\imgs`
-
-## 项目内关键文件
-
-### 预览生成脚本
-
-`prototype/wechat-theme-previews/generate-previews.mjs`
-
-用途：
-
-- 读取测试文章 Markdown
-- 生成 4 套 Wechat HTML 预览
-- 统一图片图注
-- 统一表格展示
-- 更新预览入口页
-
-### Skill 骨架
-
-`skills/wechat-article-workflow/SKILL.md`
-
-用途：
-
-- 定义未来通用 skill 的触发条件
-- 固化阶段化输出与人工确认点
-- 给后续 AI 一个明确的封装入口
-- 当前已配套最小稳定闭环脚本与本机安装脚本
-- 当前已配套依赖检查脚本，可自动检查缺失子 skill
-
-相关脚本：
-
-- `skills/wechat-article-workflow/scripts/workflow_bundle.py`
-- `skills/wechat-article-workflow/scripts/install_local_skill.py`
-- `skills/wechat-article-workflow/scripts/ensure_dependencies.py`
-- `skills/wechat-article-workflow/scripts/workflow_state_manager.py`
-- `skills/wechat-article-workflow/scripts/workflow_stage_runner.py`
-- `skills/wechat-article-workflow/scripts/workflow_executor.py`
-- `skills/wechat-article-workflow/scripts/workflow_validator.py`
-
-依赖仓库：
-
-- `https://github.com/KKKKhazix/khazix-skills`
-- `https://github.com/JimLiu/baoyu-skills`
-
-后续单独发布 skill：
-
-- `skills/wechat-draft-publisher/`
-
-说明：
-
-- 公众号草稿箱最后一跳应优先使用我们自己的 `wechat-draft-publisher`
-- 不再把 `baoyu-post-to-wechat` 作为这条工作流的核心依赖
-- `workflow_bundle.py` 在脚本化调用时应优先配合 `--json` 使用，再从返回结果读取 `files.state_path`
-- `workflow_executor.py status` 现在会同时输出阶段校验结果，并写出 `02-规划/阶段检查报告.md`
-- `workflow_executor.py status` 现在也会输出当前阶段的 `next_steps` 和 `suggested_commands`
-- `workflow_executor.py confirm` 默认不会跨过 blocker；只有显式传入 `--allow-issues` 时才允许带问题推进
-
-### 项目说明文档
+如果你想继续看内部设计和项目状态，可以读：
 
 - `docs/PROJECT_STATUS.md`
 - `docs/AI_HANDOFF.md`
 - `docs/ROADMAP.md`
-- `docs/WORKFLOW_VALIDATION.md`
-
-### 发布态导出器
-
-`scripts/claude_publish_export.py`
-
-用途：
-
-- 将正文 Markdown 转成微信兼容的 4 套发布态 HTML
-- 自动把本地图片路径改写为文章目录内可用的相对路径
-- 避免把预览页壳子、脚本、外部样式一起发进公众号
-- 自动把原生列表转成微信更稳的手工编号块
-- 自动把长图注压缩成更适合正文显示的短图注
-- 正文里对图片使用圆角容器裁切，但不修改原图文件
-- 支持将 4 套主题分别导出到文章目录中
-
-### 回归测试
-
-`tests/test_claude_publish_export.py`
-
-当前重点锁定：
-
-- 不输出 `<style>` / `<script>`
-- 图片保留图注，但图注显示允许缩短
-- 表格保留样式
-- 原生 `ol/ul/li` 不进入发布态 HTML
-- 列表统一转成微信更稳的手工编号块
-- 图片容器带圆角裁切
-
-## 当前不做的事
-
-- 不追求一键全自动直接发布
-- 不把正文工作流和封面工作流混在一起
-- 不在这一阶段强行固化单一模板
-- 不把用户过去表达过的偏好当成当前轮已经确认
-
-## 当前边界
-
-这个项目当前只把“项目说明 + 预览原型 + 工作流边界”整理清楚，还没有正式封装成独立 skill。
-
-原因是：
-
-- 真实链路虽然已跑通
-- 但完整 skill 还需要把多阶段确认逻辑、输入约定、输出约定、错误处理统一起来
-- 当前 4 套主题的发布态导出都已打通，但文档和命名还可以继续整理
-
-## 下一步建议
-
-1. 把“输入正文 -> 输出 4 套 HTML”的流程封成一个稳定命令
-2. 把“正文配图规划 + 提示词打包”补成独立中间产物
-3. 再把整条链路封装成通用 skill
-4. 最后单独处理“草稿箱投递”和“封面工作流”
-
-## GitHub 发布建议
-
-当前仓库已经建立并推送到 GitHub。
-
-后续重点不再是“先上传”，而是继续做两件事：
-
-1. 验证整条工作流的阶段输出是否稳定
-2. 把现有原型逐步收敛成真正可复用的 skill
+- `skills/wechat-article-workflow/SKILL.md`
