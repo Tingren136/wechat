@@ -15,6 +15,7 @@ description: Use when producing a long-form WeChat Official Account article from
 - 每个关键阶段都必须允许用户确认
 - 默认一次性输出 4 套 Wechat 排版供手动选择
 - 编排子 skill 时，必须完整遵循子 skill 的原始流程，不能为了提速跳过确认、分析或中间产物
+- 超过 `300` 字的连续纯文字区段，必须在配图规划前先落成 `02-规划/视觉中断清单.md`
 - 每篇文章的图片资产必须单独存放在“以文章标题命名”的文件夹中，不能混放
 
 当前这一版已经封装好的最小稳定闭环是：
@@ -66,8 +67,8 @@ description: Use when producing a long-form WeChat Official Account article from
 3. 如果正文尚未润色，先走 `khazix-writer`
 4. 如果 Markdown 尚未整理，先走 `baoyu-format-markdown`
 5. 为当前文章创建独立图片资产目录，目录名默认等于文章标题
-6. 先确认本篇正文适合几张图，再走 `baoyu-article-illustrator`
-7. 输出配图规划、prompt 打包结果，并等待确认
+6. 先确认本篇正文适合几张图，并先产出 `02-规划/视觉中断清单.md`
+7. 再走 `baoyu-article-illustrator` 输出配图规划、prompt 打包结果，并等待确认
 8. 图片生成阶段优先调用已安装的生图 skill，正文图默认 `4:3`
 9. 将图片插回正文，并检查 `300` 字内视觉中断规则
 10. 导出 4 套预览 HTML
@@ -165,6 +166,8 @@ py .\skills\wechat-article-workflow\scripts\ensure_dependencies.py
 - `01-原稿/03-整理稿.md`
 - `01-原稿/04-配图稿.md`
 - `02-规划/工作流状态.json`
+- `02-规划/配图数量确认.txt`
+- `02-规划/视觉中断清单.md`
 - `02-规划/规则摘要.md`
 - `02-规划/发布检查清单.md`
 - `02-规划/outline.md`
@@ -200,6 +203,8 @@ imgs/
     │   └── 04-配图稿.md
     ├── 02-规划/
     │   ├── 工作流状态.json
+    │   ├── 配图数量确认.txt
+    │   ├── 视觉中断清单.md
     │   ├── 规则摘要.md
     │   ├── 发布检查清单.md
     │   ├── outline.md
@@ -266,6 +271,8 @@ imgs/
 
 - 不能让正文出现过长的纯文字连续区段
 - 一般每隔不超过 `300` 中文字，至少应该出现一种视觉中断
+- 这条规则不是只在最后检查，而是在 `image_count_review` 与 `illustration_plan_review` 阶段就开始强制执行
+- 如果整理稿里已经出现超长纯文字区段，但还没有 `02-规划/视觉中断清单.md`，阶段校验必须直接阻塞
 - 视觉中断不一定都是真图片，也可以是表格、引用块、对比卡、流程图、信息图
 - 如果某一节信息密度高、情绪重、读者容易疲劳，宁可多放一张图，也不要硬撑长文本
 
@@ -322,11 +329,11 @@ imgs/
 - 当前阶段说明生成器 `workflow_stage_runner.py`
 - 阶段执行器 `workflow_executor.py`
 - 阶段校验器 `workflow_validator.py`
+- 300 字视觉中断规则已前移到配图数量确认与配图规划阶段校验
 
 当前仍未完成：
 
 - 把润色、Markdown 结构化、配图规划、图片生成、草稿箱投递全部串成一个自动执行器
-- 把“300 字视觉中断检查”正式编码进执行脚本
 - 把子 skill 编排和确认点做成真正的可交互状态机
 
 ## Common Mistakes

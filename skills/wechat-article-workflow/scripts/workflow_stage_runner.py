@@ -36,10 +36,11 @@ STAGE_DEFINITIONS = {
         "recommended_skill": "baoyu-article-illustrator",
         "goal": "先确认本篇文章适合几张图，并考虑 300 字视觉中断规则。",
         "inputs": ["01-原稿/03-整理稿.md"],
-        "outputs": ["02-规划/配图数量确认.txt"],
-        "checks": ["已确认图片数量", "考虑长段纯文字打断"],
+        "outputs": ["02-规划/配图数量确认.txt", "02-规划/视觉中断清单.md"],
+        "checks": ["已确认图片数量", "已列出所有超过 300 字的长段并规划打断方式"],
         "next_steps": [
-            "先阅读 `01-原稿/03-整理稿.md`，判断图片总数和需要重点打断的长文字区段。",
+            "先阅读 `01-原稿/03-整理稿.md`，找出所有超过约 300 字的纯文字区段。",
+            "先补 `02-规划/视觉中断清单.md`，把必须插入视觉中断的位置列清楚。",
             "把确认结果写入 `02-规划/配图数量确认.txt`。",
             "完成后再执行 confirm 进入配图规划阶段。",
         ],
@@ -47,11 +48,11 @@ STAGE_DEFINITIONS = {
     "illustration_plan_review": {
         "recommended_skill": "baoyu-article-illustrator",
         "goal": "生成配图规划、outline 和 prompt 打包结果。",
-        "inputs": ["01-原稿/03-整理稿.md", "02-规划/配图数量确认.txt"],
+        "inputs": ["01-原稿/03-整理稿.md", "02-规划/配图数量确认.txt", "02-规划/视觉中断清单.md"],
         "outputs": ["02-规划/outline.md", "02-规划/batch.json", "03-提示词/草稿/"],
-        "checks": ["图位自然", "足够打断长文本", "提示词已归档"],
+        "checks": ["图位覆盖视觉中断清单", "足够打断长文本", "提示词已归档"],
         "next_steps": [
-            "使用 baoyu-article-illustrator 结合整理稿与图片数量确认做图位规划。",
+            "使用 baoyu-article-illustrator 结合整理稿、图片数量确认和视觉中断清单做图位规划。",
             "生成 `02-规划/outline.md`、`02-规划/batch.json` 和 `03-提示词/草稿/` 下的 prompt 文件。",
             "确认图位能打断长文本后，再执行 confirm 进入图片生成阶段。",
         ],
@@ -141,9 +142,11 @@ def build_suggested_commands(stage_id: str, state_path: Path, state: dict[str, A
         commands.append(f'powershell -File C:\\Users\\86156\\.codex\\skills\\baoyu-format-markdown\\scripts\\run-formatter.ps1 "{source_dir / "02-润色稿.md"}"')
         commands.append(f'py .\\skills\\wechat-article-workflow\\scripts\\workflow_executor.py status --state-path "{state_path_str}"')
     elif stage_id == "image_count_review":
-        commands.append(f'在 `{planning_dir / "配图数量确认.txt"}` 写入建议图片数量与打断说明。')
+        commands.append(f'先在 `{planning_dir / "视觉中断清单.md"}` 列出所有超过约 300 字的长段和对应打断方式。')
+        commands.append(f'再在 `{planning_dir / "配图数量确认.txt"}` 写入建议图片数量与整体配图策略。')
         commands.append(f'py .\\skills\\wechat-article-workflow\\scripts\\workflow_executor.py status --state-path "{state_path_str}"')
     elif stage_id == "illustration_plan_review":
+        commands.append(f'根据 `{planning_dir / "视觉中断清单.md"}` 生成覆盖这些区段的图位规划。')
         commands.append(f'把 outline 与 batch 产物写入 `{planning_dir}`，把 prompt 草稿写入 `{prompts_dir / "草稿"}`。')
         commands.append(f'py .\\skills\\wechat-article-workflow\\scripts\\workflow_executor.py status --state-path "{state_path_str}"')
     elif stage_id == "image_generation_review":

@@ -82,6 +82,34 @@ class WorkflowStageRunnerTests(unittest.TestCase):
             self.assertIn("03-整理稿.md", json.dumps(packet, ensure_ascii=False))
             self.assertTrue(any("baoyu-format-markdown" in item for item in packet["next_steps"]))
 
+    def test_stage_runner_requires_visual_break_plan_during_image_count_review(self):
+        state_module = load_module(STATE_MODULE_PATH, "workflow_state_manager")
+        runner_module = load_module(RUNNER_MODULE_PATH, "workflow_stage_runner")
+        with tempfile.TemporaryDirectory() as temp_dir:
+            article_dir = Path(temp_dir) / "测试文章"
+            planning_dir = article_dir / "02-规划"
+            source_dir = article_dir / "01-原稿"
+            planning_dir.mkdir(parents=True)
+            source_dir.mkdir(parents=True)
+            state_path = planning_dir / "工作流状态.json"
+            artifacts = {
+                "draft": str(source_dir / "01-草稿.md"),
+                "polished": str(source_dir / "02-润色稿.md"),
+                "formatted": str(source_dir / "03-整理稿.md"),
+                "with_images": str(source_dir / "04-配图稿.md"),
+                "publish_checklist": str(planning_dir / "发布检查清单.md"),
+                "selected_theme": str(article_dir / "06-发布" / "已选主题.txt"),
+            }
+            state_module.initialize_state(state_path=state_path, title="测试文章", artifacts=artifacts)
+            state_module.advance_stage(state_path, note="润色已确认")
+            state_module.advance_stage(state_path, note="整理稿已确认")
+
+            packet = runner_module.generate_stage_packet(state_path)
+
+            self.assertEqual(packet["stage_id"], "image_count_review")
+            self.assertIn("02-规划/视觉中断清单.md", json.dumps(packet, ensure_ascii=False))
+            self.assertTrue(any("视觉中断清单" in item for item in packet["next_steps"]))
+
 
 if __name__ == "__main__":
     unittest.main()

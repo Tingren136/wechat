@@ -98,15 +98,44 @@ def validate_markdown_review(state: dict[str, Any], issues: list[dict[str, str]]
         add_issue(issues, "missing_title_structure", "整理稿缺少标题或 frontmatter title。")
 
 
+def validate_visual_break_plan(
+    markdown_path: Path,
+    plan_path: Path,
+    issues: list[dict[str, Any]],
+    require_plan: bool,
+) -> None:
+    if not file_has_content(str(markdown_path)):
+        return
+    markdown = markdown_path.read_text(encoding="utf-8")
+    long_block_issues = scan_markdown_visual_breaks(markdown)
+    plan_exists = file_has_content(str(plan_path))
+    if long_block_issues and (not require_plan or not plan_exists):
+        issues.extend(long_block_issues)
+    if require_plan and long_block_issues and not plan_exists:
+        add_issue(
+            issues,
+            "missing_visual_break_plan",
+            "存在超过 300 字的纯文字区段，但还没有补 `02-规划/视觉中断清单.md`。",
+        )
+
+
 def validate_image_count_review(state_path: Path, issues: list[dict[str, str]]) -> None:
+    state = load_state(state_path)
+    formatted_path = Path(state.get("artifacts", {}).get("formatted", ""))
     confirm_path = state_path.parent / "配图数量确认.txt"
+    visual_break_plan_path = state_path.parent / "视觉中断清单.md"
+    validate_visual_break_plan(formatted_path, visual_break_plan_path, issues, require_plan=True)
     if not file_has_content(str(confirm_path)):
         add_issue(issues, "missing_image_count_confirmation", "尚未确认本篇文章需要几张图，请先补 02-规划/配图数量确认.txt。")
 
 
 def validate_illustration_plan_review(state_path: Path, issues: list[dict[str, str]]) -> None:
+    state = load_state(state_path)
     planning_dir = state_path.parent
     prompts_dir = state_path.parent.parent / "03-提示词" / "草稿"
+    formatted_path = Path(state.get("artifacts", {}).get("formatted", ""))
+    visual_break_plan_path = planning_dir / "视觉中断清单.md"
+    validate_visual_break_plan(formatted_path, visual_break_plan_path, issues, require_plan=True)
     if not file_has_content(str(planning_dir / "outline.md")):
         add_issue(issues, "missing_outline", "缺少 02-规划/outline.md。")
     if not file_has_content(str(planning_dir / "batch.json")):
