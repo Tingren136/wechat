@@ -32,6 +32,7 @@
 - 已封装阶段校验器：`skills/wechat-article-workflow/scripts/workflow_validator.py`
 - 已补 `workflow_bundle.py --json` 机器可读输出，避免 PowerShell 捕获中文路径时损坏状态文件路径
 - 已把“300 字视觉中断规则”编码进校验器，并由执行器在确认前默认守门
+- 已把每个阶段的下一步操作和建议命令编码进阶段说明与状态输出
 - 已安装到本机 `C:\Users\86156\.codex\skills\wechat-article-workflow`
 - 已把文章工作区升级为中文分层目录结构：`01-原稿 / 02-规划 / 03-提示词 / 04-素材 / 05-排版 / 06-发布`
 - 已拆出独立草稿箱发布 skill：`skills/wechat-draft-publisher`

@@ -53,6 +53,9 @@ class WorkflowExecutorTests(unittest.TestCase):
 
             self.assertIn("validation", status)
             self.assertEqual(status["validation"]["status"], "ok")
+            self.assertIn("next_steps", status["packet"])
+            self.assertIn("suggested_commands", status["packet"])
+            self.assertTrue(status["packet"]["suggested_commands"])
 
     def test_confirm_current_stage_advances_and_refreshes_brief(self):
         builder = load_module(BUILDER_MODULE_PATH, "workflow_bundle")

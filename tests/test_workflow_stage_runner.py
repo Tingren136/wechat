@@ -43,11 +43,16 @@ class WorkflowStageRunnerTests(unittest.TestCase):
 
             self.assertEqual(packet["stage_id"], "polish_review")
             self.assertEqual(packet["stage_label"], "润色完成后确认")
+            self.assertIn("next_steps", packet)
+            self.assertGreaterEqual(len(packet["next_steps"]), 2)
+            self.assertIn("suggested_commands", packet)
+            self.assertTrue(any("khazix-writer" in item for item in packet["next_steps"]))
             self.assertTrue((planning_dir / "当前阶段说明.md").exists())
             text = (planning_dir / "当前阶段说明.md").read_text(encoding="utf-8")
             self.assertIn("khazix-writer", text)
             self.assertIn("02-润色稿.md", text)
             self.assertIn("确认后才能进入下一阶段", text)
+            self.assertIn("建议命令", text)
 
     def test_stage_runner_updates_packet_after_advancing(self):
         state_module = load_module(STATE_MODULE_PATH, "workflow_state_manager")
@@ -75,6 +80,7 @@ class WorkflowStageRunnerTests(unittest.TestCase):
             self.assertEqual(packet["stage_id"], "markdown_review")
             self.assertIn("baoyu-format-markdown", packet["recommended_skill"])
             self.assertIn("03-整理稿.md", json.dumps(packet, ensure_ascii=False))
+            self.assertTrue(any("baoyu-format-markdown" in item for item in packet["next_steps"]))
 
 
 if __name__ == "__main__":

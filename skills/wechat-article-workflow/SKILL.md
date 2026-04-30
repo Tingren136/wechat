@@ -137,6 +137,7 @@ py .\skills\wechat-article-workflow\scripts\workflow_executor.py `
 - 不建议在 PowerShell 里用纯文本截取文章目录后，再手工拼接 `工作流状态.json`
 - 中文路径场景下，优先使用 `--json` 结果里的 `files.state_path`
 - `status` 会返回当前阶段校验结果，并写出 `02-规划/阶段检查报告.md`
+- `status` 还会返回 `next_steps` 与 `suggested_commands`，并把这些内容写入 `02-规划/当前阶段说明.md`
 - `confirm` 默认不会跨过 blocker；只有显式传入 `--allow-issues` 时才允许带问题推进
 
 本机安装 skill：

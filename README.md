@@ -216,6 +216,7 @@ imgs/
 - 不再把 `baoyu-post-to-wechat` 作为这条工作流的核心依赖
 - `workflow_bundle.py` 在脚本化调用时应优先配合 `--json` 使用，再从返回结果读取 `files.state_path`
 - `workflow_executor.py status` 现在会同时输出阶段校验结果，并写出 `02-规划/阶段检查报告.md`
+- `workflow_executor.py status` 现在也会输出当前阶段的 `next_steps` 和 `suggested_commands`
 - `workflow_executor.py confirm` 默认不会跨过 blocker；只有显式传入 `--allow-issues` 时才允许带问题推进
 
 ### 项目说明文档
