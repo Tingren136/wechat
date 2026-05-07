@@ -21,6 +21,22 @@ def _article_dir_from_state(state: dict[str, Any]) -> Path:
     return draft_path.parents[1]
 
 
+def build_gate_packet(state_path: Path, validation: dict[str, Any]) -> dict[str, Any]:
+    state_path_str = str(state_path)
+    status_command = f'py .\\skills\\wechat-article-workflow\\scripts\\workflow_executor.py status --state-path "{state_path_str}"'
+    confirm_command = f'py .\\skills\\wechat-article-workflow\\scripts\\workflow_executor.py confirm --state-path "{state_path_str}"'
+    return {
+        "must_only_operate_current_stage": True,
+        "must_rerun_status_after_outputs": True,
+        "must_fix_blockers_before_confirm": True,
+        "must_confirm_explicitly_to_advance": True,
+        "current_validation_status": validation["status"],
+        "status_command": status_command,
+        "confirm_command": confirm_command,
+        "blocked_action": "如果 validation.status 为 blocked，先修复阶段检查报告中的 blocker，再重新运行 status。",
+    }
+
+
 def get_status(state_path: Path) -> dict[str, Any]:
     state_module = load_module("workflow_state_manager.py", "workflow_state_manager")
     stage_runner = load_module("workflow_stage_runner.py", "workflow_stage_runner")
@@ -28,7 +44,8 @@ def get_status(state_path: Path) -> dict[str, Any]:
     state = state_module.load_state(state_path)
     packet = stage_runner.generate_stage_packet(state_path)
     validation = validator.validate_stage(state_path)
-    return {"state": state, "packet": packet, "validation": validation}
+    gate = build_gate_packet(state_path, validation)
+    return {"state": state, "packet": packet, "validation": validation, "gate": gate}
 
 
 def confirm_current_stage(state_path: Path, note: str = "", allow_issues: bool = False) -> dict[str, Any]:

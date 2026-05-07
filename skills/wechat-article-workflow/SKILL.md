@@ -60,6 +60,22 @@ description: Use when producing a long-form WeChat Official Account article from
 
 不在运行时继续收敛成单一模板。
 
+## Mandatory Gate Protocol
+
+这是主 skill 的硬协议，不是建议：
+
+1. 初始化工作区后，先运行一次 `workflow_executor.py status`，只处理当前 `stage_id`。
+2. 当前阶段产物写完后，必须再次运行 `status`，不能凭记忆直接切到下一个子 skill。
+3. 只有当 `validation.status` 等于 `ok` 时，才允许运行 `workflow_executor.py confirm`。
+4. 如果 `validation.status` 等于 `blocked`，必须先修复 `02-规划/阶段检查报告.md` 里的 blocker，再重新运行 `status`。
+5. 不允许把“已经写在 SKILL.md 里的规则”当作“已经被执行过的规则”。
+
+换句话说：
+
+- `SKILL.md` 负责告诉 AI 应该怎么做
+- `workflow_executor.py status` 和 `workflow_validator.py` 负责验证有没有真的做到
+- 没有经过 `status -> 修复 blocker -> status -> confirm` 的阶段，不算完成
+
 ## Workflow
 
 1. 读取输入正文或草稿
@@ -139,6 +155,7 @@ py .\skills\wechat-article-workflow\scripts\workflow_executor.py `
 - 中文路径场景下，优先使用 `--json` 结果里的 `files.state_path`
 - `status` 会返回当前阶段校验结果，并写出 `02-规划/阶段检查报告.md`
 - `status` 还会返回 `next_steps` 与 `suggested_commands`，并把这些内容写入 `02-规划/当前阶段说明.md`
+- `status` 还会返回机器可读的 `gate` 字段，明确要求“产物写完后必须重新运行 status，只有 validation.status=ok 才能 confirm”
 - `confirm` 默认不会跨过 blocker；只有显式传入 `--allow-issues` 时才允许带问题推进
 
 本机安装 skill：

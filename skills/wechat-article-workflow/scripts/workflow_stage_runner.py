@@ -164,6 +164,17 @@ def build_suggested_commands(stage_id: str, state_path: Path, state: dict[str, A
     return commands
 
 
+def build_gate_requirements(state_path: Path) -> list[str]:
+    state_path_str = str(state_path)
+    return [
+        "只允许处理当前阶段，不允许凭记忆直接跳到下一个子 skill。",
+        f"当前阶段产物写完后，必须重新运行 `status`：`py .\\skills\\wechat-article-workflow\\scripts\\workflow_executor.py status --state-path \"{state_path_str}\"`。",
+        "只有当 `validation.status` 等于 `ok` 时，才能继续执行 `confirm`。",
+        f"推进阶段前，必须显式运行 `confirm`：`py .\\skills\\wechat-article-workflow\\scripts\\workflow_executor.py confirm --state-path \"{state_path_str}\"`。",
+        "如果 `validation.status` 等于 `blocked`，必须先修复 `阶段检查报告.md` 里的 blocker，再重新运行 `status`。",
+    ]
+
+
 def stage_instruction_markdown(state: dict[str, Any], stage_meta: dict[str, Any]) -> str:
     lines = [
         f"# 当前阶段说明",
@@ -189,6 +200,10 @@ def stage_instruction_markdown(state: dict[str, Any], stage_meta: dict[str, Any]
         lines.append("")
         lines.append("## 建议命令")
         lines.extend([f"- `{item}`" for item in stage_meta["suggested_commands"]])
+    if stage_meta.get("gate_requirements"):
+        lines.append("")
+        lines.append("## 强制门协议")
+        lines.extend([f"- {item}" for item in stage_meta["gate_requirements"]])
     lines.append("")
     lines.append("## 说明")
     lines.append("- 确认后才能进入下一阶段。")
@@ -213,6 +228,7 @@ def generate_stage_packet(state_path: Path) -> dict[str, Any]:
     stage_meta = {
         **stage_meta,
         "suggested_commands": build_suggested_commands(stage_id, state_path, state),
+        "gate_requirements": build_gate_requirements(state_path),
     }
     planning_dir = state_path.parent
     instruction_path = planning_dir / "当前阶段说明.md"
@@ -228,6 +244,7 @@ def generate_stage_packet(state_path: Path) -> dict[str, Any]:
         "checks": stage_meta["checks"],
         "next_steps": stage_meta.get("next_steps", []),
         "suggested_commands": stage_meta.get("suggested_commands", []),
+        "gate_requirements": stage_meta.get("gate_requirements", []),
         "instruction_file": str(instruction_path),
     }
     return packet

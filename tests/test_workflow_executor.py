@@ -56,6 +56,11 @@ class WorkflowExecutorTests(unittest.TestCase):
             self.assertIn("next_steps", status["packet"])
             self.assertIn("suggested_commands", status["packet"])
             self.assertTrue(status["packet"]["suggested_commands"])
+            self.assertIn("gate", status)
+            self.assertTrue(status["gate"]["must_rerun_status_after_outputs"])
+            self.assertTrue(status["gate"]["must_fix_blockers_before_confirm"])
+            self.assertIn("workflow_executor.py status", status["gate"]["status_command"])
+            self.assertIn("workflow_executor.py confirm", status["gate"]["confirm_command"])
 
     def test_confirm_current_stage_advances_and_refreshes_brief(self):
         builder = load_module(BUILDER_MODULE_PATH, "workflow_bundle")

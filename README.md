@@ -108,6 +108,12 @@ py .\skills\wechat-article-workflow\scripts\ensure_dependencies.py
 
 最简单的入口不是一口气自动跑完整流程，而是先初始化一篇文章的工作区。
 
+先说明一条硬规则：
+
+- 这个主 skill 不是“读完 SKILL.md 就靠 AI 自己记着做”
+- 每个阶段都必须走 `status -> 修复 blocker -> status -> confirm` 这个门
+- 如果 AI 没有调用 `workflow_executor.py status` 和 `workflow_executor.py confirm`，那它只是看了规则，不代表规则真的执行了
+
 ### 第一步：初始化文章工作区
 
 ```powershell
@@ -153,6 +159,7 @@ py .\skills\wechat-article-workflow\scripts\workflow_executor.py `
 - 当前阶段校验结果
 - `next_steps`
 - `suggested_commands`
+- `gate`
 
 同时还会在文章目录里写出：
 
@@ -160,6 +167,13 @@ py .\skills\wechat-article-workflow\scripts\workflow_executor.py `
 - `02-规划/阶段检查报告.md`
 
 其中从“配图数量确认”阶段开始，如果 `01-原稿/03-整理稿.md` 里存在超过 `300` 字的连续纯文字区段，`status` 会直接拦住，要求先补 `02-规划/视觉中断清单.md`，而不是拖到最后插图阶段才发现。
+
+`gate` 会明确告诉 AI：
+
+- 当前只能处理这个阶段
+- 当前阶段产物写完后必须重新运行 `status`
+- 只有 `validation.status = ok` 时，才能运行 `confirm`
+- 如果还是 `blocked`，就继续修复 `阶段检查报告.md` 里的 blocker
 
 ### 第三步：确认并推进下一阶段
 

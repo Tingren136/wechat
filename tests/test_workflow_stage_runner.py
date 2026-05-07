@@ -53,6 +53,8 @@ class WorkflowStageRunnerTests(unittest.TestCase):
             self.assertIn("02-润色稿.md", text)
             self.assertIn("确认后才能进入下一阶段", text)
             self.assertIn("建议命令", text)
+            self.assertIn("强制门协议", text)
+            self.assertIn("必须重新运行 `status`", text)
 
     def test_stage_runner_updates_packet_after_advancing(self):
         state_module = load_module(STATE_MODULE_PATH, "workflow_state_manager")
