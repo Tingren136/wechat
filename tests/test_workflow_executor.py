@@ -48,6 +48,7 @@ class WorkflowExecutorTests(unittest.TestCase):
             state_path = Path(result["workspace"]["planning"]) / "工作流状态.json"
             polished_path = Path(result["workspace"]["source"]) / "02-润色稿.md"
             polished_path.write_text("# 润色稿\n\n已完成。", encoding="utf-8")
+            executor.record_stage_approval(state_path, note="用户已确认润色稿可以继续")
 
             status = executor.get_status(state_path)
 
@@ -61,6 +62,7 @@ class WorkflowExecutorTests(unittest.TestCase):
             self.assertTrue(status["gate"]["must_fix_blockers_before_confirm"])
             self.assertIn("workflow_executor.py status", status["gate"]["status_command"])
             self.assertIn("workflow_executor.py confirm", status["gate"]["confirm_command"])
+            self.assertIn("workflow_executor.py record-approval", status["gate"]["approval_command"])
 
     def test_confirm_current_stage_advances_and_refreshes_brief(self):
         builder = load_module(BUILDER_MODULE_PATH, "workflow_bundle")
@@ -76,6 +78,7 @@ class WorkflowExecutorTests(unittest.TestCase):
             state_path = Path(result["workspace"]["planning"]) / "工作流状态.json"
             polished_path = Path(result["workspace"]["source"]) / "02-润色稿.md"
             polished_path.write_text("# 润色稿\n\n润色完成。", encoding="utf-8")
+            executor.record_stage_approval(state_path, note="用户已确认润色稿")
 
             updated = executor.confirm_current_stage(state_path, note="润色完成")
 
@@ -133,6 +136,25 @@ class WorkflowExecutorTests(unittest.TestCase):
 
             self.assertEqual(updated["state"]["selected_theme"], "Claude")
             self.assertEqual(Path(result["workspace"]["delivery"]).joinpath("已选主题.txt").read_text(encoding="utf-8"), "Claude")
+
+    def test_record_stage_approval_returns_receipt_path(self):
+        builder = load_module(BUILDER_MODULE_PATH, "workflow_bundle")
+        executor = load_module(EXECUTOR_MODULE_PATH, "workflow_executor")
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            markdown_path = temp_path / "draft.md"
+            image_root = temp_path / "imgs"
+            markdown_path.write_text(SAMPLE_MARKDOWN, encoding="utf-8")
+            (temp_path / "demo.png").write_bytes(b"fake-image")
+
+            result = builder.export_article_bundle(markdown_path, image_root)
+            state_path = Path(result["workspace"]["planning"]) / "工作流状态.json"
+
+            approval = executor.record_stage_approval(state_path, note="用户已确认当前阶段可以继续")
+
+            self.assertIn("receipt_file", approval)
+            self.assertTrue(Path(approval["receipt_file"]).exists())
+            self.assertEqual(approval["state"]["last_approval"]["stage_id"], "polish_review")
 
     def test_refresh_layout_outputs_rebuilds_preview_and_publish_html(self):
         builder = load_module(BUILDER_MODULE_PATH, "workflow_bundle")

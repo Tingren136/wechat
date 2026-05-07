@@ -65,16 +65,18 @@ description: Use when producing a long-form WeChat Official Account article from
 这是主 skill 的硬协议，不是建议：
 
 1. 初始化工作区后，先运行一次 `workflow_executor.py status`，只处理当前 `stage_id`。
-2. 当前阶段产物写完后，必须再次运行 `status`，不能凭记忆直接切到下一个子 skill。
-3. 只有当 `validation.status` 等于 `ok` 时，才允许运行 `workflow_executor.py confirm`。
-4. 如果 `validation.status` 等于 `blocked`，必须先修复 `02-规划/阶段检查报告.md` 里的 blocker，再重新运行 `status`。
-5. 不允许把“已经写在 SKILL.md 里的规则”当作“已经被执行过的规则”。
+2. 当前阶段结果展示给用户，得到明确同意后，必须先运行 `workflow_executor.py record-approval` 写入人工确认回执。
+3. 当前阶段产物写完后，必须再次运行 `status`，不能凭记忆直接切到下一个子 skill。
+4. 只有当 `validation.status` 等于 `ok` 时，才允许运行 `workflow_executor.py confirm`。
+5. 如果 `validation.status` 等于 `blocked`，必须先修复 `02-规划/阶段检查报告.md` 里的 blocker，再重新运行 `status`。
+6. 不允许把“已经写在 SKILL.md 里的规则”当作“已经被执行过的规则”。
 
 换句话说：
 
 - `SKILL.md` 负责告诉 AI 应该怎么做
 - `workflow_executor.py status` 和 `workflow_validator.py` 负责验证有没有真的做到
-- 没有经过 `status -> 修复 blocker -> status -> confirm` 的阶段，不算完成
+- `workflow_executor.py record-approval` 负责把用户确认落成正式回执
+- 没有经过 `展示结果 -> 用户同意 -> record-approval -> status -> confirm` 的阶段，不算完成
 
 ## Workflow
 
@@ -156,6 +158,15 @@ py .\skills\wechat-article-workflow\scripts\workflow_executor.py `
 - `status` 会返回当前阶段校验结果，并写出 `02-规划/阶段检查报告.md`
 - `status` 还会返回 `next_steps` 与 `suggested_commands`，并把这些内容写入 `02-规划/当前阶段说明.md`
 - `status` 还会返回机器可读的 `gate` 字段，明确要求“产物写完后必须重新运行 status，只有 validation.status=ok 才能 confirm”
+- 用户确认当前阶段结果后，必须先运行：
+
+```powershell
+py .\skills\wechat-article-workflow\scripts\workflow_executor.py `
+  record-approval `
+  --state-path $result.files.state_path `
+  --note "这里写用户确认原话"
+```
+
 - `confirm` 默认不会跨过 blocker；只有显式传入 `--allow-issues` 时才允许带问题推进
 
 本机安装 skill：
@@ -185,6 +196,7 @@ py .\skills\wechat-article-workflow\scripts\ensure_dependencies.py
 - `02-规划/工作流状态.json`
 - `02-规划/配图数量确认.txt`
 - `02-规划/视觉中断清单.md`
+- `02-规划/人工确认/`
 - `02-规划/规则摘要.md`
 - `02-规划/发布检查清单.md`
 - `02-规划/outline.md`
@@ -222,6 +234,7 @@ imgs/
     │   ├── 工作流状态.json
     │   ├── 配图数量确认.txt
     │   ├── 视觉中断清单.md
+    │   ├── 人工确认/
     │   ├── 规则摘要.md
     │   ├── 发布检查清单.md
     │   ├── outline.md

@@ -111,8 +111,8 @@ py .\skills\wechat-article-workflow\scripts\ensure_dependencies.py
 先说明一条硬规则：
 
 - 这个主 skill 不是“读完 SKILL.md 就靠 AI 自己记着做”
-- 每个阶段都必须走 `status -> 修复 blocker -> status -> confirm` 这个门
-- 如果 AI 没有调用 `workflow_executor.py status` 和 `workflow_executor.py confirm`，那它只是看了规则，不代表规则真的执行了
+- 每个阶段都必须走 `展示结果 -> 用户同意 -> record-approval -> status -> confirm` 这个门
+- 如果 AI 没有调用 `workflow_executor.py record-approval`、`workflow_executor.py status` 和 `workflow_executor.py confirm`，那它只是看了规则，不代表规则真的执行了
 
 ### 第一步：初始化文章工作区
 
@@ -138,6 +138,7 @@ py .\skills\wechat-article-workflow\scripts\workflow_bundle.py `
 - `02-规划/视觉中断清单.md`
 - `02-规划/outline.md`
 - `02-规划/batch.json`
+- `02-规划/人工确认/`
 - `03-提示词/草稿/`
 
 ### 第二步：查看当前阶段
@@ -171,11 +172,25 @@ py .\skills\wechat-article-workflow\scripts\workflow_executor.py `
 `gate` 会明确告诉 AI：
 
 - 当前只能处理这个阶段
+- 用户明确同意后必须先记录人工确认回执
 - 当前阶段产物写完后必须重新运行 `status`
 - 只有 `validation.status = ok` 时，才能运行 `confirm`
 - 如果还是 `blocked`，就继续修复 `阶段检查报告.md` 里的 blocker
 
-### 第三步：确认并推进下一阶段
+### 第三步：记录人工确认
+
+当用户明确说“可以继续”之后，先写入当前阶段的人工确认回执：
+
+```powershell
+py .\skills\wechat-article-workflow\scripts\workflow_executor.py `
+  record-approval `
+  --state-path "你的工作流状态.json路径" `
+  --note "这里写用户确认原话"
+```
+
+这一步会在 `02-规划/人工确认/` 下生成当前阶段的确认文件。
+
+### 第四步：确认并推进下一阶段
 
 ```powershell
 py .\skills\wechat-article-workflow\scripts\workflow_executor.py `
@@ -195,7 +210,7 @@ py .\skills\wechat-article-workflow\scripts\workflow_executor.py `
   --allow-issues
 ```
 
-### 第四步：刷新排版
+### 第五步：刷新排版
 
 如果你已经完成配图稿，希望重新导出 4 套排版：
 
@@ -205,7 +220,7 @@ py .\skills\wechat-article-workflow\scripts\workflow_executor.py `
   --state-path "你的工作流状态.json路径"
 ```
 
-### 第五步：设置最终主题
+### 第六步：设置最终主题
 
 ```powershell
 py .\skills\wechat-article-workflow\scripts\workflow_executor.py `
@@ -232,6 +247,7 @@ imgs/
     │   ├── 阶段检查报告.md
     │   ├── 配图数量确认.txt
     │   ├── 视觉中断清单.md
+    │   ├── 人工确认/
     │   ├── 规则摘要.md
     │   ├── outline.md
     │   ├── batch.json

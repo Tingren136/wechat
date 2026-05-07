@@ -24,16 +24,19 @@ def _article_dir_from_state(state: dict[str, Any]) -> Path:
 def build_gate_packet(state_path: Path, validation: dict[str, Any]) -> dict[str, Any]:
     state_path_str = str(state_path)
     status_command = f'py .\\skills\\wechat-article-workflow\\scripts\\workflow_executor.py status --state-path "{state_path_str}"'
+    approval_command = f'py .\\skills\\wechat-article-workflow\\scripts\\workflow_executor.py record-approval --state-path "{state_path_str}" --note "这里写用户确认原话"'
     confirm_command = f'py .\\skills\\wechat-article-workflow\\scripts\\workflow_executor.py confirm --state-path "{state_path_str}"'
     return {
         "must_only_operate_current_stage": True,
         "must_rerun_status_after_outputs": True,
+        "must_record_human_approval_before_confirm": True,
         "must_fix_blockers_before_confirm": True,
         "must_confirm_explicitly_to_advance": True,
         "current_validation_status": validation["status"],
         "status_command": status_command,
+        "approval_command": approval_command,
         "confirm_command": confirm_command,
-        "blocked_action": "如果 validation.status 为 blocked，先修复阶段检查报告中的 blocker，再重新运行 status。",
+        "blocked_action": "如果 validation.status 为 blocked，先补产物或人工确认回执，再重新运行 status。",
     }
 
 
@@ -58,6 +61,16 @@ def confirm_current_stage(state_path: Path, note: str = "", allow_issues: bool =
     state = state_module.advance_stage(state_path, note=note)
     packet = stage_runner.generate_stage_packet(state_path)
     return {"state": state, "packet": packet, "validation": validation}
+
+
+def record_stage_approval(state_path: Path, note: str) -> dict[str, Any]:
+    state_module = load_module("workflow_state_manager.py", "workflow_state_manager")
+    state = state_module.record_stage_approval(state_path, note=note)
+    return {
+        "state": state,
+        "receipt_file": state["last_approval"]["receipt_file"],
+        "approval": state["last_approval"],
+    }
 
 
 def select_theme(state_path: Path, theme_name: str) -> dict[str, Any]:
@@ -91,6 +104,10 @@ def main() -> None:
     confirm_parser.add_argument("--note", default="")
     confirm_parser.add_argument("--allow-issues", action="store_true")
 
+    approval_parser = subparsers.add_parser("record-approval", help="记录当前阶段人工确认")
+    approval_parser.add_argument("--state-path", required=True)
+    approval_parser.add_argument("--note", required=True)
+
     theme_parser = subparsers.add_parser("set-theme", help="设置已选主题")
     theme_parser.add_argument("--state-path", required=True)
     theme_parser.add_argument("--theme", required=True)
@@ -105,6 +122,8 @@ def main() -> None:
         result = get_status(state_path)
     elif args.command == "confirm":
         result = confirm_current_stage(state_path, note=args.note, allow_issues=args.allow_issues)
+    elif args.command == "record-approval":
+        result = record_stage_approval(state_path, note=args.note)
     elif args.command == "set-theme":
         result = select_theme(state_path, theme_name=args.theme)
     else:

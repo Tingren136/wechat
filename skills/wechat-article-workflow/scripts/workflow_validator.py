@@ -9,6 +9,16 @@ from typing import Any
 
 THEME_LABELS = ["Claude", "纽约时报", "深度阅读", "Medium"]
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"}
+APPROVAL_FILE_LABELS = {
+    "polish_review": "01-润色完成后确认.txt",
+    "markdown_review": "02-Markdown整理后确认.txt",
+    "image_count_review": "03-配图数量确认.txt",
+    "illustration_plan_review": "04-配图规划完成后确认.txt",
+    "image_generation_review": "05-图片生成前确认.txt",
+    "image_insert_review": "06-插图回正文后确认.txt",
+    "layout_review": "07-四套排版产出后确认.txt",
+    "draft_publish_review": "08-草稿箱投递前确认.txt",
+}
 
 
 def load_state(state_path: Path) -> dict[str, Any]:
@@ -22,6 +32,35 @@ def add_issue(issues: list[dict[str, str]], code: str, message: str, severity: s
 def file_has_content(path_str: str) -> bool:
     path = Path(path_str)
     return path.exists() and bool(path.read_text(encoding="utf-8").strip())
+
+
+def approval_receipt_path(state: dict[str, Any]) -> Path | None:
+    approval_dir = state.get("artifacts", {}).get("approval_dir", "")
+    stage_id = state.get("current_stage_id", "").strip()
+    if not approval_dir or not stage_id:
+        return None
+    filename = APPROVAL_FILE_LABELS.get(stage_id)
+    if not filename:
+        return None
+    return Path(approval_dir) / filename
+
+
+def validate_human_approval(state: dict[str, Any], issues: list[dict[str, Any]]) -> None:
+    receipt_path = approval_receipt_path(state)
+    if receipt_path is None or not file_has_content(str(receipt_path)):
+        add_issue(
+            issues,
+            "missing_human_approval_receipt",
+            "当前阶段还没有人工确认回执，请先记录用户确认，再继续推进。",
+        )
+        return
+    receipt_text = receipt_path.read_text(encoding="utf-8")
+    if "状态: 已确认" not in receipt_text:
+        add_issue(
+            issues,
+            "invalid_human_approval_receipt",
+            "人工确认回执缺少“状态: 已确认”标记，请重新记录确认。",
+        )
 
 
 def count_text_units(text: str) -> int:
@@ -86,6 +125,8 @@ def validate_polish_review(state: dict[str, Any], issues: list[dict[str, str]]) 
     polished = state.get("artifacts", {}).get("polished", "")
     if not file_has_content(polished):
         add_issue(issues, "missing_polished_markdown", "润色稿不存在或仍为空，请先完成 02-润色稿.md。")
+        return
+    validate_human_approval(state, issues)
 
 
 def validate_markdown_review(state: dict[str, Any], issues: list[dict[str, str]]) -> None:
@@ -96,6 +137,7 @@ def validate_markdown_review(state: dict[str, Any], issues: list[dict[str, str]]
     text = formatted_path.read_text(encoding="utf-8")
     if "title:" not in text and not re.search(r"^#\s+\S+", text, re.MULTILINE):
         add_issue(issues, "missing_title_structure", "整理稿缺少标题或 frontmatter title。")
+    validate_human_approval(state, issues)
 
 
 def validate_visual_break_plan(
@@ -127,6 +169,7 @@ def validate_image_count_review(state_path: Path, issues: list[dict[str, str]]) 
     validate_visual_break_plan(formatted_path, visual_break_plan_path, issues, require_plan=True)
     if not file_has_content(str(confirm_path)):
         add_issue(issues, "missing_image_count_confirmation", "尚未确认本篇文章需要几张图，请先补 02-规划/配图数量确认.txt。")
+    validate_human_approval(state, issues)
 
 
 def validate_illustration_plan_review(state_path: Path, issues: list[dict[str, str]]) -> None:
@@ -143,13 +186,16 @@ def validate_illustration_plan_review(state_path: Path, issues: list[dict[str, s
     prompt_files = [path for path in prompts_dir.glob("*") if path.is_file()]
     if not prompt_files:
         add_issue(issues, "missing_prompt_drafts", "03-提示词/草稿 目录下还没有 prompt 文件。")
+    validate_human_approval(state, issues)
 
 
 def validate_image_generation_review(state_path: Path, issues: list[dict[str, str]]) -> None:
+    state = load_state(state_path)
     body_images_dir = state_path.parent.parent / "04-素材" / "正文配图"
     image_files = [path for path in body_images_dir.glob("*") if path.is_file() and path.suffix.lower() in IMAGE_EXTENSIONS]
     if not image_files:
         add_issue(issues, "missing_body_images", "正文配图目录为空，请先完成图片生成。")
+    validate_human_approval(state, issues)
 
 
 def validate_image_insert_review(state: dict[str, Any], issues: list[dict[str, Any]]) -> None:
@@ -159,9 +205,11 @@ def validate_image_insert_review(state: dict[str, Any], issues: list[dict[str, A
         return
     markdown = with_images_path.read_text(encoding="utf-8")
     issues.extend(scan_markdown_visual_breaks(markdown))
+    validate_human_approval(state, issues)
 
 
 def validate_layout_review(state_path: Path, issues: list[dict[str, str]]) -> None:
+    state = load_state(state_path)
     article_dir = state_path.parent.parent
     preview_dir = article_dir / "05-排版" / "预览版"
     publish_dir = article_dir / "05-排版" / "发布版"
@@ -177,6 +225,7 @@ def validate_layout_review(state_path: Path, issues: list[dict[str, str]]) -> No
             "missing_theme_outputs",
             f"以下主题的预览版或发布版 HTML 缺失：{', '.join(missing_themes)}。",
         )
+    validate_human_approval(state, issues)
 
 
 def validate_draft_publish_review(state: dict[str, Any], state_path: Path, issues: list[dict[str, str]]) -> None:
@@ -192,6 +241,7 @@ def validate_draft_publish_review(state: dict[str, Any], state_path: Path, issue
         add_issue(issues, "missing_selected_publish_html", f"缺少已选主题的发布版 HTML：{publish_path.name}。")
     if not file_has_content(str(publish_checklist_path)):
         add_issue(issues, "missing_publish_checklist", "发布检查清单不存在或仍为空。")
+    validate_human_approval(state, issues)
 
 
 def render_report(state: dict[str, Any], result: dict[str, Any]) -> str:
