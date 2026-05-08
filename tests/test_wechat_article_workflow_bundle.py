@@ -94,8 +94,6 @@ class WechatArticleWorkflowBundleTests(unittest.TestCase):
 
                 self.assertIn("技能测试文章", preview_html)
                 self.assertIn("技能测试文章", publish_html)
-                self.assertIn("../..", preview_html)
-                self.assertIn("../..", publish_html)
                 self.assertIn("正文配图/demo.png", preview_html)
                 self.assertIn("正文配图/demo.png", publish_html)
                 self.assertIn("预览版", preview_html)
@@ -128,6 +126,31 @@ class WechatArticleWorkflowBundleTests(unittest.TestCase):
             self.assertEqual(Path(payload["article_dir"]), article_dir)
             self.assertEqual(Path(payload["files"]["state_path"]), article_dir / "02-规划" / "工作流状态.json")
             self.assertTrue(Path(payload["files"]["state_path"]).exists())
+
+    def test_export_article_bundle_does_not_reset_existing_workflow_state(self):
+        module = load_module()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            markdown_path = temp_path / "draft.md"
+            image_root = temp_path / "imgs"
+            markdown_path.write_text(SAMPLE_MARKDOWN, encoding="utf-8")
+            (temp_path / "demo.png").write_bytes(b"fake-image")
+
+            first = module.export_article_bundle(markdown_path, image_root)
+            state_path = Path(first["files"]["state_path"])
+
+            # 模拟用户已推进到下一阶段
+            state = json.loads(state_path.read_text(encoding="utf-8"))
+            state["current_stage_id"] = "markdown_review"
+            state["current_stage_label"] = "Markdown整理后确认"
+            state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+
+            second = module.export_article_bundle(markdown_path, image_root)
+            updated = json.loads(state_path.read_text(encoding="utf-8"))
+
+            self.assertEqual(Path(second["files"]["state_path"]), state_path)
+            self.assertEqual(updated["current_stage_id"], "markdown_review")
+            self.assertEqual(updated["current_stage_label"], "Markdown整理后确认")
 
 
 if __name__ == "__main__":

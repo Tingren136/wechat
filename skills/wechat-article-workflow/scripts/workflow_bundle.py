@@ -195,7 +195,14 @@ def write_workspace_files(
         "publish_checklist": str(publish_checklist_path),
         "selected_theme": str(selected_theme_path),
     }
-    state_module.initialize_state(state_path=state_path, title=title, artifacts=artifacts)
+    if not state_path.exists():
+        state_module.initialize_state(state_path=state_path, title=title, artifacts=artifacts)
+    else:
+        state = state_module.load_state(state_path)
+        state["title"] = title
+        state.setdefault("artifacts", {})
+        state["artifacts"].update(artifacts)
+        state_module.save_state(state_path, state)
     packet = stage_runner_module.generate_stage_packet(state_path)
     return {
         "state_path": str(state_path),
@@ -257,7 +264,7 @@ def export_article_bundle(markdown_path: Path, image_root: Path, output_prefix: 
     rename_map = safe_copy_images(markdown_path, workspace_paths["body_images"], workspace_paths["source"], raw)
     normalized_markdown = replace_markdown_image_paths(raw, rename_map)
 
-    with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".md", dir=workspace_paths["source"], delete=False) as temp_file:
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".md", dir=article_dir, delete=False) as temp_file:
         temp_file.write(normalized_markdown)
         normalized_markdown_path = Path(temp_file.name)
 
