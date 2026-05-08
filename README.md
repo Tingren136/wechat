@@ -60,12 +60,11 @@
 
 - `khazix-writer`
 - `baoyu-format-markdown`
-- `baoyu-article-illustrator`
 - `baoyu-imagine`
 
-本仓库同时内置了一个本地增强包装 skill：
+本仓库同时内置一个“我们自己的配图规划 skill”：
 
-- `baoyu-article-illustrator-plus`（先算 300 字视觉中断下限，再结合宝玉语义规划补足图位）
+- `lizi-article-illustrator`（先按 300 字规则算下限，再做语义图位规划，且禁止回退低密度）
 
 来源仓库：
 
@@ -142,7 +141,7 @@ py .\skills\wechat-article-workflow\scripts\workflow_bundle.py `
 - `02-规划/配图数量确认.txt`
 - `02-规划/视觉中断清单.md`
 - `02-规划/视觉中断清单.json`
-- `02-规划/配图执行记录.txt`（必须记录 `planner_skill: baoyu-article-illustrator-plus`）
+- `02-规划/配图执行记录.txt`（必须记录 `planner_skill: lizi-article-illustrator`）
 - `02-规划/outline.md`
 - `02-规划/batch.json`
 - `02-规划/人工确认/`

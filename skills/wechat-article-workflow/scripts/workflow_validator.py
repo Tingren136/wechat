@@ -237,15 +237,15 @@ def validate_planner_skill_trace(planning_dir: Path, issues: list[dict[str, Any]
         add_issue(
             issues,
             "missing_planner_skill_trace",
-            "缺少 `02-规划/配图执行记录.txt`，请记录 `planner_skill: baoyu-article-illustrator-plus` 后再继续。",
+            "缺少 `02-规划/配图执行记录.txt`，请记录 `planner_skill: lizi-article-illustrator` 后再继续。",
         )
         return
     text = trace_path.read_text(encoding="utf-8")
-    if "planner_skill: baoyu-article-illustrator-plus" not in text:
+    if "planner_skill: lizi-article-illustrator" not in text:
         add_issue(
             issues,
             "invalid_planner_skill_trace",
-            "检测到配图规划未明确使用增强版 skill，请改为 `baoyu-article-illustrator-plus` 并更新执行记录。",
+            "检测到配图规划未明确使用 `lizi-article-illustrator`，请改用我们的专用配图 skill 并更新执行记录。",
         )
 
 

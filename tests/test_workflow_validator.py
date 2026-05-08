@@ -272,7 +272,7 @@ class WorkflowValidatorTests(unittest.TestCase):
             (planning_dir / "outline.md").write_text("# outline", encoding="utf-8")
             (planning_dir / "batch.json").write_text('{"items":[1,2,3,4,5,6,7]}', encoding="utf-8")
             (planning_dir / "配图执行记录.txt").write_text(
-                "planner_skill: baoyu-article-illustrator-plus\n",
+                "planner_skill: lizi-article-illustrator\n",
                 encoding="utf-8",
             )
             (prompts_dir / "01-提示词.md").write_text("一张图", encoding="utf-8")
@@ -361,7 +361,7 @@ class WorkflowValidatorTests(unittest.TestCase):
             )
             (planning_dir / "outline.md").write_text("# outline", encoding="utf-8")
             (planning_dir / "batch.json").write_text('{"items":[1,2,3,4]}', encoding="utf-8")
-            (planning_dir / "配图执行记录.txt").write_text("planner_skill: baoyu-article-illustrator-plus\n", encoding="utf-8")
+            (planning_dir / "配图执行记录.txt").write_text("planner_skill: lizi-article-illustrator\n", encoding="utf-8")
             (prompts_dir / "01-提示词.md").write_text("一张图", encoding="utf-8")
             (approval_dir / "04-配图规划完成后确认.txt").write_text(
                 "阶段: illustration_plan_review\n状态: 已确认\n说明: 用户已确认配图规划。\n",

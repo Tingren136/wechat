@@ -86,7 +86,7 @@ description: Use when producing a long-form WeChat Official Account article from
 4. 如果 Markdown 尚未整理，先走 `baoyu-format-markdown`
 5. 为当前文章创建独立图片资产目录，目录名默认等于文章标题
 6. 先确认本篇正文适合几张图，并先产出 `02-规划/视觉中断清单.md`
-7. 再走 `baoyu-article-illustrator-plus` 输出配图规划、prompt 打包结果，并等待确认
+7. 再走 `lizi-article-illustrator` 输出配图规划、prompt 打包结果，并等待确认
 8. 图片生成阶段优先调用已安装的生图 skill，正文图默认 `4:3`
 9. 将图片插回正文，并检查 `300` 字内视觉中断规则
 10. 导出 4 套预览 HTML
@@ -101,12 +101,11 @@ description: Use when producing a long-form WeChat Official Account article from
 
 - `khazix-writer`
 - `baoyu-format-markdown`
-- `baoyu-article-illustrator`
 - `baoyu-imagine`
 
-本仓库内置一个本地包装增强 skill：
+本仓库内置一个本地配图规划 skill：
 
-- `baoyu-article-illustrator-plus`（依赖 `baoyu-article-illustrator`，但会强制执行 300 字视觉中断下限）
+- `lizi-article-illustrator`（按我们的规则强制执行 300 字视觉中断下限与图数下限）
 
 检查与自动补装脚本：
 
@@ -201,7 +200,7 @@ py .\skills\wechat-article-workflow\scripts\ensure_dependencies.py
 - `02-规划/配图数量确认.txt`
 - `02-规划/视觉中断清单.md`
 - `02-规划/视觉中断清单.json`
-- `02-规划/配图执行记录.txt`（必须包含 `planner_skill: baoyu-article-illustrator-plus`）
+- `02-规划/配图执行记录.txt`（必须包含 `planner_skill: lizi-article-illustrator`）
 - `02-规划/人工确认/`
 - `02-规划/规则摘要.md`
 - `02-规划/发布检查清单.md`
@@ -281,7 +280,7 @@ imgs/
 
 - `khazix-writer` 要先润色再确认，就必须先确认
 - `baoyu-format-markdown` 要先分析再格式化，就必须保留分析与格式化阶段
-- `baoyu-article-illustrator-plus` 要先跑视觉中断统计，再调用 `baoyu-article-illustrator` 做语义规划，并在不足时补图位
+- `lizi-article-illustrator` 要先跑视觉中断统计，再做语义规划，并在不足时补图位
 - 如果正文某一段连续文字过长，即使主图数量已够，也要补充视觉中断，不能让读者长时间只面对大段文字
 
 如果 workflow 为了编排效率与子 skill 原规则发生冲突，**以子 skill 的完整流程为准**。

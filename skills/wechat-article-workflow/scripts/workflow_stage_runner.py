@@ -35,29 +35,29 @@ STAGE_DEFINITIONS = {
         ],
     },
     "image_count_review": {
-        "recommended_skill": "baoyu-article-illustrator-plus",
+        "recommended_skill": "lizi-article-illustrator",
         "goal": "先确认本篇文章适合几张图，并考虑 300 字视觉中断规则。",
         "inputs": ["01-原稿/03-整理稿.md"],
         "outputs": ["02-规划/配图数量确认.txt", "02-规划/视觉中断清单.md", "02-规划/视觉中断清单.json", "02-规划/人工确认/03-配图数量确认.txt"],
         "checks": ["已确认图片数量", "已列出所有超过 300 字的长段并规划打断方式"],
         "next_steps": [
             "先运行机器统计脚本，自动生成 `02-规划/视觉中断清单.md` 和 `02-规划/视觉中断清单.json`。",
-            "以机器统计结果作为正文最少配图下限，再结合 baoyu-article-illustrator-plus 的结构建议确认图片数量。",
+            "以机器统计结果作为正文最少配图下限，再结合 lizi-article-illustrator 的结构建议确认图片数量。",
             "把确认结果写入 `02-规划/配图数量确认.txt`。",
             "先把配图数量方案展示给用户，得到明确同意后，再记录人工确认回执。",
             "完成后再执行 confirm 进入配图规划阶段。",
         ],
     },
     "illustration_plan_review": {
-        "recommended_skill": "baoyu-article-illustrator-plus",
+        "recommended_skill": "lizi-article-illustrator",
         "goal": "生成配图规划、outline 和 prompt 打包结果。",
         "inputs": ["01-原稿/03-整理稿.md", "02-规划/配图数量确认.txt", "02-规划/视觉中断清单.md", "02-规划/视觉中断清单.json"],
         "outputs": ["02-规划/outline.md", "02-规划/batch.json", "02-规划/配图执行记录.txt", "03-提示词/草稿/", "02-规划/人工确认/04-配图规划完成后确认.txt"],
         "checks": ["图位覆盖视觉中断清单", "足够打断长文本", "提示词已归档"],
         "next_steps": [
-            "使用 baoyu-article-illustrator-plus 结合整理稿、图片数量确认和视觉中断清单做图位规划。",
+            "使用 lizi-article-illustrator 结合整理稿、图片数量确认和视觉中断清单做图位规划。",
             "生成 `02-规划/outline.md`、`02-规划/batch.json` 和 `03-提示词/草稿/` 下的 prompt 文件。",
-            "在 `02-规划/配图执行记录.txt` 写入 `planner_skill: baoyu-article-illustrator-plus`。",
+            "在 `02-规划/配图执行记录.txt` 写入 `planner_skill: lizi-article-illustrator`。",
             "先把图位规划和 prompt 方案展示给用户，得到明确同意后，再记录人工确认回执。",
             "确认图位能打断长文本后，再执行 confirm 进入图片生成阶段。",
         ],
@@ -162,7 +162,7 @@ def build_suggested_commands(stage_id: str, state_path: Path, state: dict[str, A
     elif stage_id == "illustration_plan_review":
         commands.append(f'根据 `{planning_dir / "视觉中断清单.md"}` 生成覆盖这些区段的图位规划。')
         commands.append(f'把 outline 与 batch 产物写入 `{planning_dir}`，把 prompt 草稿写入 `{prompts_dir / "草稿"}`。')
-        commands.append(f'在 `{planning_dir / "配图执行记录.txt"}` 写入 `planner_skill: baoyu-article-illustrator-plus`。')
+        commands.append(f'在 `{planning_dir / "配图执行记录.txt"}` 写入 `planner_skill: lizi-article-illustrator`。')
         commands.append(f'py .\\skills\\wechat-article-workflow\\scripts\\workflow_executor.py status --state-path "{state_path_str}"')
         commands.append(f'py .\\skills\\wechat-article-workflow\\scripts\\workflow_executor.py record-approval --state-path "{state_path_str}" --note "这里写用户确认原话"')
     elif stage_id == "image_generation_review":
