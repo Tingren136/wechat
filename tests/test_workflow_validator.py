@@ -270,7 +270,7 @@ class WorkflowValidatorTests(unittest.TestCase):
                 encoding="utf-8",
             )
             (planning_dir / "outline.md").write_text("# outline", encoding="utf-8")
-            (planning_dir / "batch.json").write_text('{"items":[1]}', encoding="utf-8")
+            (planning_dir / "batch.json").write_text('{"items":[1,2,3,4,5,6,7]}', encoding="utf-8")
             (planning_dir / "配图执行记录.txt").write_text(
                 "planner_skill: baoyu-article-illustrator-plus\n",
                 encoding="utf-8",
@@ -317,7 +317,7 @@ class WorkflowValidatorTests(unittest.TestCase):
                 encoding="utf-8",
             )
             (planning_dir / "outline.md").write_text("# outline", encoding="utf-8")
-            (planning_dir / "batch.json").write_text('{"items":[1]}', encoding="utf-8")
+            (planning_dir / "batch.json").write_text('{"items":[1,2,3,4,5,6,7]}', encoding="utf-8")
             (prompts_dir / "01-提示词.md").write_text("一张图", encoding="utf-8")
             (approval_dir / "04-配图规划完成后确认.txt").write_text(
                 "阶段: illustration_plan_review\n状态: 已确认\n说明: 用户已确认配图规划。\n",
@@ -337,6 +337,50 @@ class WorkflowValidatorTests(unittest.TestCase):
 
             self.assertEqual(result["status"], "blocked")
             self.assertTrue(any(item["code"] == "missing_planner_skill_trace" for item in result["issues"]))
+
+    def test_validator_blocks_when_batch_image_tasks_less_than_required(self):
+        validator = load_module(VALIDATOR_MODULE_PATH, "workflow_validator")
+        with tempfile.TemporaryDirectory() as temp_dir:
+            article_dir = Path(temp_dir) / "测试文章"
+            planning_dir = article_dir / "02-规划"
+            source_dir = article_dir / "01-原稿"
+            prompts_dir = article_dir / "03-提示词" / "草稿"
+            approval_dir = planning_dir / "人工确认"
+            planning_dir.mkdir(parents=True)
+            source_dir.mkdir(parents=True)
+            prompts_dir.mkdir(parents=True)
+            approval_dir.mkdir(parents=True)
+
+            markdown = "# 标题\n\n" + ("这是一段很长的正文" * 80)
+            (source_dir / "03-整理稿.md").write_text(markdown, encoding="utf-8")
+            (planning_dir / "配图数量确认.txt").write_text("正文配图 7 张。", encoding="utf-8")
+            (planning_dir / "视觉中断清单.md").write_text("# 视觉中断清单\n", encoding="utf-8")
+            (planning_dir / "视觉中断清单.json").write_text(
+                json.dumps({"rule_max_chars": 300, "required_body_images": 7, "long_plain_text_blocks": []}, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            (planning_dir / "outline.md").write_text("# outline", encoding="utf-8")
+            (planning_dir / "batch.json").write_text('{"items":[1,2,3,4]}', encoding="utf-8")
+            (planning_dir / "配图执行记录.txt").write_text("planner_skill: baoyu-article-illustrator-plus\n", encoding="utf-8")
+            (prompts_dir / "01-提示词.md").write_text("一张图", encoding="utf-8")
+            (approval_dir / "04-配图规划完成后确认.txt").write_text(
+                "阶段: illustration_plan_review\n状态: 已确认\n说明: 用户已确认配图规划。\n",
+                encoding="utf-8",
+            )
+
+            state = {
+                "title": "测试文章",
+                "current_stage_id": "illustration_plan_review",
+                "current_stage_label": "配图规划完成后确认",
+                "artifacts": {"formatted": str(source_dir / "03-整理稿.md"), "approval_dir": str(approval_dir)},
+            }
+            state_path = planning_dir / "工作流状态.json"
+            state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+
+            result = validator.validate_stage(state_path)
+
+            self.assertEqual(result["status"], "blocked")
+            self.assertTrue(any(item["code"] == "insufficient_planned_images_in_batch" for item in result["issues"]))
 
 
 if __name__ == "__main__":

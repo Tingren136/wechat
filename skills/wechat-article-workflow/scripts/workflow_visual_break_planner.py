@@ -34,13 +34,16 @@ def scan_long_plain_text_blocks(markdown: str, max_chars: int) -> list[dict[str,
         nonlocal current_lines, current_count, start_line
         if current_count > max_chars:
             snippet = "".join(current_lines)[:40]
+            # 需要的“视觉中断次数”应保证切分后每段都不超过 max_chars。
+            # 对于长度 n，最少中断次数 = ceil(n / max_chars) - 1 = floor((n - 1) / max_chars)。
+            required_breaks = (current_count - 1) // max_chars
             blocks.append(
                 {
                     "start_line": start_line,
                     "end_line": end_line,
                     "char_count": current_count,
                     "snippet": snippet,
-                    "required_breaks": 1,
+                    "required_breaks": required_breaks,
                 }
             )
         current_lines = []
@@ -67,7 +70,7 @@ def scan_long_plain_text_blocks(markdown: str, max_chars: int) -> list[dict[str,
 def build_plan(markdown_path: Path, max_chars: int) -> dict[str, Any]:
     markdown = markdown_path.read_text(encoding="utf-8")
     blocks = scan_long_plain_text_blocks(markdown, max_chars=max_chars)
-    required_body_images = len(blocks)
+    required_body_images = sum(int(block.get("required_breaks", 0)) for block in blocks)
     return {
         "rule_max_chars": max_chars,
         "required_body_images": required_body_images,
@@ -92,7 +95,7 @@ def render_plan_markdown(plan: dict[str, Any]) -> str:
 
     for idx, block in enumerate(plan["long_plain_text_blocks"], start=1):
         lines.append(
-            f"- 区段 {idx}：第 {block['start_line']}-{block['end_line']} 行，约 {block['char_count']} 字，建议至少插入 1 次视觉中断。"
+            f"- 区段 {idx}：第 {block['start_line']}-{block['end_line']} 行，约 {block['char_count']} 字，建议至少插入 {block['required_breaks']} 次视觉中断。"
         )
     lines.append("")
     return "\n".join(lines)

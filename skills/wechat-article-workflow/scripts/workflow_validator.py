@@ -249,6 +249,47 @@ def validate_planner_skill_trace(planning_dir: Path, issues: list[dict[str, Any]
         )
 
 
+def parse_planned_image_count_from_batch(batch_path: Path) -> int | None:
+    if not file_has_content(str(batch_path)):
+        return None
+    try:
+        data = json.loads(batch_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+    if isinstance(data, list):
+        return len(data)
+    if not isinstance(data, dict):
+        return None
+    for key in ("items", "prompts", "tasks", "plans"):
+        value = data.get(key)
+        if isinstance(value, list):
+            return len(value)
+    return None
+
+
+def validate_planned_image_quota(plan_json_path: Path, batch_path: Path, issues: list[dict[str, Any]]) -> None:
+    plan_data = load_visual_break_plan_json(plan_json_path)
+    if plan_data is None:
+        return
+    required_body_images = parse_required_body_images_from_plan(plan_data)
+    if required_body_images <= 0:
+        return
+    planned_images = parse_planned_image_count_from_batch(batch_path)
+    if planned_images is None:
+        add_issue(
+            issues,
+            "invalid_batch_image_plan",
+            "无法从 `02-规划/batch.json` 解析配图数量，请确认 batch 中包含可计数的图片任务列表。",
+        )
+        return
+    if planned_images < required_body_images:
+        add_issue(
+            issues,
+            "insufficient_planned_images_in_batch",
+            f"`batch.json` 配图任务不足：当前 {planned_images} 个，视觉中断至少需要 {required_body_images} 个。",
+        )
+
+
 def validate_image_count_review(state_path: Path, issues: list[dict[str, str]]) -> None:
     state = load_state(state_path)
     formatted_path = Path(state.get("artifacts", {}).get("formatted", ""))
@@ -270,12 +311,14 @@ def validate_illustration_plan_review(state_path: Path, issues: list[dict[str, s
     visual_break_plan_path = planning_dir / "视觉中断清单.md"
     visual_break_plan_json_path = planning_dir / VISUAL_BREAK_PLAN_JSON
     confirm_path = planning_dir / "配图数量确认.txt"
+    batch_path = planning_dir / "batch.json"
     validate_visual_break_plan(formatted_path, visual_break_plan_path, issues, require_plan=True)
     validate_visual_break_quota(visual_break_plan_json_path, confirm_path, issues)
     validate_planner_skill_trace(planning_dir, issues)
+    validate_planned_image_quota(visual_break_plan_json_path, batch_path, issues)
     if not file_has_content(str(planning_dir / "outline.md")):
         add_issue(issues, "missing_outline", "缺少 02-规划/outline.md。")
-    if not file_has_content(str(planning_dir / "batch.json")):
+    if not file_has_content(str(batch_path)):
         add_issue(issues, "missing_batch_json", "缺少 02-规划/batch.json。")
     prompt_files = [path for path in prompts_dir.glob("*") if path.is_file()]
     if not prompt_files:
