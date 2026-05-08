@@ -55,8 +55,10 @@ class WorkflowValidatorTests(unittest.TestCase):
             article_dir = Path(temp_dir) / "测试文章"
             planning_dir = article_dir / "02-规划"
             source_dir = article_dir / "01-原稿"
+            approval_dir = planning_dir / "人工确认"
             planning_dir.mkdir(parents=True)
             source_dir.mkdir(parents=True)
+            approval_dir.mkdir(parents=True)
 
             markdown = "# 标题\n\n" + ("这是一段很长的正文" * 80)
             (source_dir / "03-整理稿.md").write_text(markdown, encoding="utf-8")
@@ -65,7 +67,7 @@ class WorkflowValidatorTests(unittest.TestCase):
                 "title": "测试文章",
                 "current_stage_id": "image_count_review",
                 "current_stage_label": "配图数量确认",
-                "artifacts": {"formatted": str(source_dir / "03-整理稿.md")},
+                "artifacts": {"formatted": str(source_dir / "03-整理稿.md"), "approval_dir": str(approval_dir)},
             }
             state_path = planning_dir / "工作流状态.json"
             state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -75,6 +77,43 @@ class WorkflowValidatorTests(unittest.TestCase):
             self.assertEqual(result["status"], "blocked")
             self.assertTrue(any(item["code"] == "long_plain_text_block" for item in result["issues"]))
             self.assertTrue(any(item["code"] == "missing_visual_break_plan" for item in result["issues"]))
+            self.assertTrue(any(item["code"] == "missing_visual_break_plan_json" for item in result["issues"]))
+
+    def test_validator_blocks_when_confirmed_image_count_less_than_required(self):
+        validator = load_module(VALIDATOR_MODULE_PATH, "workflow_validator")
+        with tempfile.TemporaryDirectory() as temp_dir:
+            article_dir = Path(temp_dir) / "测试文章"
+            planning_dir = article_dir / "02-规划"
+            source_dir = article_dir / "01-原稿"
+            approval_dir = planning_dir / "人工确认"
+            planning_dir.mkdir(parents=True)
+            source_dir.mkdir(parents=True)
+            approval_dir.mkdir(parents=True)
+
+            markdown = "# 标题\n\n" + ("这是一段很长的正文" * 80)
+            formatted_path = source_dir / "03-整理稿.md"
+            formatted_path.write_text(markdown, encoding="utf-8")
+            (planning_dir / "视觉中断清单.md").write_text("# 视觉中断清单\n", encoding="utf-8")
+            (planning_dir / "视觉中断清单.json").write_text(
+                json.dumps({"rule_max_chars": 300, "required_body_images": 7, "long_plain_text_blocks": []}, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            (planning_dir / "配图数量确认.txt").write_text("正文配图 4 张", encoding="utf-8")
+            (approval_dir / "03-配图数量确认.txt").write_text("阶段: image_count_review\n状态: 已确认\n", encoding="utf-8")
+
+            state = {
+                "title": "测试文章",
+                "current_stage_id": "image_count_review",
+                "current_stage_label": "配图数量确认",
+                "artifacts": {"formatted": str(formatted_path), "approval_dir": str(approval_dir)},
+            }
+            state_path = planning_dir / "工作流状态.json"
+            state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+
+            result = validator.validate_stage(state_path)
+
+            self.assertEqual(result["status"], "blocked")
+            self.assertTrue(any(item["code"] == "insufficient_image_count_for_visual_breaks" for item in result["issues"]))
 
     def test_validator_flags_long_plain_text_without_visual_break(self):
         validator = load_module(VALIDATOR_MODULE_PATH, "workflow_validator")
@@ -221,9 +260,13 @@ class WorkflowValidatorTests(unittest.TestCase):
 
             markdown = "# 标题\n\n" + ("这是一段很长的正文" * 80)
             (source_dir / "03-整理稿.md").write_text(markdown, encoding="utf-8")
-            (planning_dir / "配图数量确认.txt").write_text("建议 4 张图。", encoding="utf-8")
+            (planning_dir / "配图数量确认.txt").write_text("正文配图 7 张。", encoding="utf-8")
             (planning_dir / "视觉中断清单.md").write_text(
                 "# 视觉中断清单\n\n- 第 3-3 行，补一张解释型图片。\n",
+                encoding="utf-8",
+            )
+            (planning_dir / "视觉中断清单.json").write_text(
+                json.dumps({"rule_max_chars": 300, "required_body_images": 7, "long_plain_text_blocks": []}, ensure_ascii=False, indent=2),
                 encoding="utf-8",
             )
             (planning_dir / "outline.md").write_text("# outline", encoding="utf-8")

@@ -50,6 +50,7 @@
 - 依赖检查脚本：`skills/wechat-article-workflow/scripts/ensure_dependencies.py`
 - 工作流打包脚本：`skills/wechat-article-workflow/scripts/workflow_bundle.py`
 - 工作流执行器：`skills/wechat-article-workflow/scripts/workflow_executor.py`
+- 视觉中断统计脚本：`skills/wechat-article-workflow/scripts/workflow_visual_break_planner.py`
 
 ## 依赖的外部 skill
 
@@ -136,6 +137,7 @@ py .\skills\wechat-article-workflow\scripts\workflow_bundle.py `
 
 - `02-规划/配图数量确认.txt`
 - `02-规划/视觉中断清单.md`
+- `02-规划/视觉中断清单.json`
 - `02-规划/outline.md`
 - `02-规划/batch.json`
 - `02-规划/人工确认/`

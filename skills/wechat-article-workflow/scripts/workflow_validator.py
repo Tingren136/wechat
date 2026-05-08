@@ -9,6 +9,7 @@ from typing import Any
 
 THEME_LABELS = ["Claude", "纽约时报", "深度阅读", "Medium"]
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"}
+VISUAL_BREAK_PLAN_JSON = "视觉中断清单.json"
 APPROVAL_FILE_LABELS = {
     "polish_review": "01-润色完成后确认.txt",
     "markdown_review": "02-Markdown整理后确认.txt",
@@ -161,14 +162,84 @@ def validate_visual_break_plan(
         )
 
 
+def load_visual_break_plan_json(plan_json_path: Path) -> dict[str, Any] | None:
+    if not file_has_content(str(plan_json_path)):
+        return None
+    try:
+        data = json.loads(plan_json_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(data, dict):
+        return None
+    return data
+
+
+def parse_required_body_images_from_plan(plan_data: dict[str, Any]) -> int:
+    required = plan_data.get("required_body_images", 0)
+    if isinstance(required, int):
+        return max(required, 0)
+    return 0
+
+
+def parse_body_image_count_from_confirmation(confirm_path: Path) -> int | None:
+    if not file_has_content(str(confirm_path)):
+        return None
+    text = confirm_path.read_text(encoding="utf-8")
+    match = re.search(r"正文(?:配图)?\s*(\d+)\s*张?", text)
+    if match:
+        return int(match.group(1))
+    match = re.search(r"(\d+)\s*张?\s*(?:正文|正文图|正文配图)", text)
+    if match:
+        return int(match.group(1))
+    fallback = re.search(r"(\d+)", text)
+    if fallback:
+        return int(fallback.group(1))
+    return None
+
+
+def validate_visual_break_quota(plan_json_path: Path, confirm_path: Path, issues: list[dict[str, Any]]) -> None:
+    plan_data = load_visual_break_plan_json(plan_json_path)
+    if plan_data is None:
+        add_issue(
+            issues,
+            "missing_visual_break_plan_json",
+            "缺少或无法读取 `02-规划/视觉中断清单.json`，请先用统计脚本重新生成视觉中断清单。",
+        )
+        return
+    required_body_images = parse_required_body_images_from_plan(plan_data)
+    if required_body_images <= 0:
+        add_issue(
+            issues,
+            "invalid_visual_break_plan_json",
+            "`视觉中断清单.json` 缺少有效的 required_body_images，无法校验最少配图数量。",
+        )
+        return
+    confirmed_body_images = parse_body_image_count_from_confirmation(confirm_path)
+    if confirmed_body_images is None:
+        add_issue(
+            issues,
+            "invalid_image_count_confirmation",
+            "无法从 `配图数量确认.txt` 解析正文配图数量，请写明“正文配图 X 张”。",
+        )
+        return
+    if confirmed_body_images < required_body_images:
+        add_issue(
+            issues,
+            "insufficient_image_count_for_visual_breaks",
+            f"正文配图数量不足：当前确认 {confirmed_body_images} 张，视觉中断至少需要 {required_body_images} 张。",
+        )
+
+
 def validate_image_count_review(state_path: Path, issues: list[dict[str, str]]) -> None:
     state = load_state(state_path)
     formatted_path = Path(state.get("artifacts", {}).get("formatted", ""))
     confirm_path = state_path.parent / "配图数量确认.txt"
     visual_break_plan_path = state_path.parent / "视觉中断清单.md"
+    visual_break_plan_json_path = state_path.parent / VISUAL_BREAK_PLAN_JSON
     validate_visual_break_plan(formatted_path, visual_break_plan_path, issues, require_plan=True)
     if not file_has_content(str(confirm_path)):
         add_issue(issues, "missing_image_count_confirmation", "尚未确认本篇文章需要几张图，请先补 02-规划/配图数量确认.txt。")
+    validate_visual_break_quota(visual_break_plan_json_path, confirm_path, issues)
     validate_human_approval(state, issues)
 
 
@@ -178,7 +249,10 @@ def validate_illustration_plan_review(state_path: Path, issues: list[dict[str, s
     prompts_dir = state_path.parent.parent / "03-提示词" / "草稿"
     formatted_path = Path(state.get("artifacts", {}).get("formatted", ""))
     visual_break_plan_path = planning_dir / "视觉中断清单.md"
+    visual_break_plan_json_path = planning_dir / VISUAL_BREAK_PLAN_JSON
+    confirm_path = planning_dir / "配图数量确认.txt"
     validate_visual_break_plan(formatted_path, visual_break_plan_path, issues, require_plan=True)
+    validate_visual_break_quota(visual_break_plan_json_path, confirm_path, issues)
     if not file_has_content(str(planning_dir / "outline.md")):
         add_issue(issues, "missing_outline", "缺少 02-规划/outline.md。")
     if not file_has_content(str(planning_dir / "batch.json")):

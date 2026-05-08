@@ -38,11 +38,11 @@ STAGE_DEFINITIONS = {
         "recommended_skill": "baoyu-article-illustrator",
         "goal": "先确认本篇文章适合几张图，并考虑 300 字视觉中断规则。",
         "inputs": ["01-原稿/03-整理稿.md"],
-        "outputs": ["02-规划/配图数量确认.txt", "02-规划/视觉中断清单.md", "02-规划/人工确认/03-配图数量确认.txt"],
+        "outputs": ["02-规划/配图数量确认.txt", "02-规划/视觉中断清单.md", "02-规划/视觉中断清单.json", "02-规划/人工确认/03-配图数量确认.txt"],
         "checks": ["已确认图片数量", "已列出所有超过 300 字的长段并规划打断方式"],
         "next_steps": [
-            "先阅读 `01-原稿/03-整理稿.md`，找出所有超过约 300 字的纯文字区段。",
-            "先补 `02-规划/视觉中断清单.md`，把必须插入视觉中断的位置列清楚。",
+            "先运行机器统计脚本，自动生成 `02-规划/视觉中断清单.md` 和 `02-规划/视觉中断清单.json`。",
+            "以机器统计结果作为正文最少配图下限，再结合 baoyu-article-illustrator 的结构建议确认图片数量。",
             "把确认结果写入 `02-规划/配图数量确认.txt`。",
             "先把配图数量方案展示给用户，得到明确同意后，再记录人工确认回执。",
             "完成后再执行 confirm 进入配图规划阶段。",
@@ -51,7 +51,7 @@ STAGE_DEFINITIONS = {
     "illustration_plan_review": {
         "recommended_skill": "baoyu-article-illustrator",
         "goal": "生成配图规划、outline 和 prompt 打包结果。",
-        "inputs": ["01-原稿/03-整理稿.md", "02-规划/配图数量确认.txt", "02-规划/视觉中断清单.md"],
+        "inputs": ["01-原稿/03-整理稿.md", "02-规划/配图数量确认.txt", "02-规划/视觉中断清单.md", "02-规划/视觉中断清单.json"],
         "outputs": ["02-规划/outline.md", "02-规划/batch.json", "03-提示词/草稿/", "02-规划/人工确认/04-配图规划完成后确认.txt"],
         "checks": ["图位覆盖视觉中断清单", "足够打断长文本", "提示词已归档"],
         "next_steps": [
@@ -152,8 +152,10 @@ def build_suggested_commands(stage_id: str, state_path: Path, state: dict[str, A
         commands.append(f'py .\\skills\\wechat-article-workflow\\scripts\\workflow_executor.py status --state-path "{state_path_str}"')
         commands.append(f'py .\\skills\\wechat-article-workflow\\scripts\\workflow_executor.py record-approval --state-path "{state_path_str}" --note "这里写用户确认原话"')
     elif stage_id == "image_count_review":
-        commands.append(f'先在 `{planning_dir / "视觉中断清单.md"}` 列出所有超过约 300 字的长段和对应打断方式。')
-        commands.append(f'再在 `{planning_dir / "配图数量确认.txt"}` 写入建议图片数量与整体配图策略。')
+        commands.append(
+            f'py .\\skills\\wechat-article-workflow\\scripts\\workflow_visual_break_planner.py --markdown-path "{source_dir / "03-整理稿.md"}" --planning-dir "{planning_dir}" --max-chars 300'
+        )
+        commands.append(f'再在 `{planning_dir / "配图数量确认.txt"}` 写入建议图片数量（不得小于 `视觉中断清单.json` 的 required_body_images）。')
         commands.append(f'py .\\skills\\wechat-article-workflow\\scripts\\workflow_executor.py status --state-path "{state_path_str}"')
         commands.append(f'py .\\skills\\wechat-article-workflow\\scripts\\workflow_executor.py record-approval --state-path "{state_path_str}" --note "这里写用户确认原话"')
     elif stage_id == "illustration_plan_review":

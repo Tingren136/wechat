@@ -1,0 +1,129 @@
+from __future__ import annotations
+
+import argparse
+import json
+import re
+from pathlib import Path
+from typing import Any
+
+
+def count_text_units(text: str) -> int:
+    normalized = re.sub(r"\s+", "", text)
+    return len(normalized)
+
+
+def is_visual_break_line(line: str) -> bool:
+    stripped = line.strip()
+    if not stripped:
+        return False
+    if stripped.startswith(("#", "![", ">", "|", "```", "<table", "<img", "<figure", "<blockquote")):
+        return True
+    if re.match(r"^(\d+\.|[-*+])\s+", stripped):
+        return True
+    return False
+
+
+def scan_long_plain_text_blocks(markdown: str, max_chars: int) -> list[dict[str, Any]]:
+    blocks: list[dict[str, Any]] = []
+    current_lines: list[str] = []
+    current_count = 0
+    start_line = 1
+    lines = markdown.splitlines()
+
+    def flush(end_line: int) -> None:
+        nonlocal current_lines, current_count, start_line
+        if current_count > max_chars:
+            snippet = "".join(current_lines)[:40]
+            blocks.append(
+                {
+                    "start_line": start_line,
+                    "end_line": end_line,
+                    "char_count": current_count,
+                    "snippet": snippet,
+                    "required_breaks": 1,
+                }
+            )
+        current_lines = []
+        current_count = 0
+        start_line = end_line + 1
+
+    for line_number, raw_line in enumerate(lines, start=1):
+        stripped = raw_line.strip()
+        if not stripped:
+            continue
+        if is_visual_break_line(raw_line):
+            flush(line_number - 1)
+            start_line = line_number + 1
+            continue
+        if not current_lines:
+            start_line = line_number
+        current_lines.append(stripped)
+        current_count += count_text_units(stripped)
+
+    flush(len(lines))
+    return blocks
+
+
+def build_plan(markdown_path: Path, max_chars: int) -> dict[str, Any]:
+    markdown = markdown_path.read_text(encoding="utf-8")
+    blocks = scan_long_plain_text_blocks(markdown, max_chars=max_chars)
+    required_body_images = len(blocks)
+    return {
+        "rule_max_chars": max_chars,
+        "required_body_images": required_body_images,
+        "long_plain_text_blocks": blocks,
+    }
+
+
+def render_plan_markdown(plan: dict[str, Any]) -> str:
+    lines = [
+        "# 视觉中断清单",
+        "",
+        f"- 规则：连续纯文字区段不超过约 {plan['rule_max_chars']} 中文字",
+        f"- 检测到超限区段：{len(plan['long_plain_text_blocks'])} 处",
+        f"- 正文最少配图建议：{plan['required_body_images']} 张",
+        "",
+        "## 超限区段",
+    ]
+    if not plan["long_plain_text_blocks"]:
+        lines.append("- 未检测到超限区段。")
+        lines.append("")
+        return "\n".join(lines)
+
+    for idx, block in enumerate(plan["long_plain_text_blocks"], start=1):
+        lines.append(
+            f"- 区段 {idx}：第 {block['start_line']}-{block['end_line']} 行，约 {block['char_count']} 字，建议至少插入 1 次视觉中断。"
+        )
+    lines.append("")
+    return "\n".join(lines)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="生成视觉中断统计清单（机器统计）")
+    parser.add_argument("--markdown-path", required=True, help="整理稿路径")
+    parser.add_argument("--planning-dir", required=True, help="02-规划目录")
+    parser.add_argument("--max-chars", type=int, default=300, help="连续纯文字上限")
+    args = parser.parse_args()
+
+    markdown_path = Path(args.markdown_path)
+    planning_dir = Path(args.planning_dir)
+    planning_dir.mkdir(parents=True, exist_ok=True)
+
+    plan = build_plan(markdown_path=markdown_path, max_chars=args.max_chars)
+    md_path = planning_dir / "视觉中断清单.md"
+    json_path = planning_dir / "视觉中断清单.json"
+
+    md_path.write_text(render_plan_markdown(plan), encoding="utf-8")
+    json_path.write_text(json.dumps(plan, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    result = {
+        "markdown_file": str(md_path),
+        "json_file": str(json_path),
+        "required_body_images": plan["required_body_images"],
+        "long_block_count": len(plan["long_plain_text_blocks"]),
+    }
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+if __name__ == "__main__":
+    main()
