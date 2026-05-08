@@ -63,6 +63,10 @@
 - `baoyu-article-illustrator`
 - `baoyu-imagine`
 
+本仓库同时内置了一个本地增强包装 skill：
+
+- `baoyu-article-illustrator-plus`（先算 300 字视觉中断下限，再结合宝玉语义规划补足图位）
+
 来源仓库：
 
 - `https://github.com/KKKKhazix/khazix-skills`

@@ -31,6 +31,8 @@ class InstallLocalSkillTests(unittest.TestCase):
             self.assertTrue((installed / "scripts" / "workflow_validator.py").exists())
             self.assertTrue((target_root / "wechat-draft-publisher").exists())
             self.assertTrue((target_root / "wechat-draft-publisher" / "SKILL.md").exists())
+            self.assertTrue((target_root / "baoyu-article-illustrator-plus").exists())
+            self.assertTrue((target_root / "baoyu-article-illustrator-plus" / "SKILL.md").exists())
 
 
 if __name__ == "__main__":

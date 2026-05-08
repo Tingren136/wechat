@@ -86,7 +86,7 @@ description: Use when producing a long-form WeChat Official Account article from
 4. 如果 Markdown 尚未整理，先走 `baoyu-format-markdown`
 5. 为当前文章创建独立图片资产目录，目录名默认等于文章标题
 6. 先确认本篇正文适合几张图，并先产出 `02-规划/视觉中断清单.md`
-7. 再走 `baoyu-article-illustrator` 输出配图规划、prompt 打包结果，并等待确认
+7. 再走 `baoyu-article-illustrator-plus` 输出配图规划、prompt 打包结果，并等待确认
 8. 图片生成阶段优先调用已安装的生图 skill，正文图默认 `4:3`
 9. 将图片插回正文，并检查 `300` 字内视觉中断规则
 10. 导出 4 套预览 HTML
@@ -103,6 +103,10 @@ description: Use when producing a long-form WeChat Official Account article from
 - `baoyu-format-markdown`
 - `baoyu-article-illustrator`
 - `baoyu-imagine`
+
+本仓库内置一个本地包装增强 skill：
+
+- `baoyu-article-illustrator-plus`（依赖 `baoyu-article-illustrator`，但会强制执行 300 字视觉中断下限）
 
 检查与自动补装脚本：
 
@@ -276,7 +280,7 @@ imgs/
 
 - `khazix-writer` 要先润色再确认，就必须先确认
 - `baoyu-format-markdown` 要先分析再格式化，就必须保留分析与格式化阶段
-- `baoyu-article-illustrator` 要先确认配图数量、类型、风格或密度，就必须先问再继续
+- `baoyu-article-illustrator-plus` 要先跑视觉中断统计，再调用 `baoyu-article-illustrator` 做语义规划，并在不足时补图位
 - 如果正文某一段连续文字过长，即使主图数量已够，也要补充视觉中断，不能让读者长时间只面对大段文字
 
 如果 workflow 为了编排效率与子 skill 原规则发生冲突，**以子 skill 的完整流程为准**。

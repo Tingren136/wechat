@@ -21,6 +21,7 @@ def install_local_skill(target_root: Path | None = None) -> Path:
     repo_root = script_path.parents[3]
     exporter_path = repo_root / "scripts" / "claude_publish_export.py"
     publisher_skill_dir = repo_root / "skills" / "wechat-draft-publisher"
+    illustrator_plus_skill_dir = repo_root / "skills" / "baoyu-article-illustrator-plus"
 
     if target_root is None:
         target_root = Path.home() / ".codex" / "skills"
@@ -34,6 +35,8 @@ def install_local_skill(target_root: Path | None = None) -> Path:
     _run_dependency_bootstrap(target_scripts_dir / "ensure_dependencies.py")
     if publisher_skill_dir.exists():
         copy_tree(publisher_skill_dir, target_root / publisher_skill_dir.name)
+    if illustrator_plus_skill_dir.exists():
+        copy_tree(illustrator_plus_skill_dir, target_root / illustrator_plus_skill_dir.name)
     return target_skill_dir
 
 
