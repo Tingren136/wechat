@@ -142,6 +142,7 @@ py .\skills\wechat-article-workflow\scripts\workflow_bundle.py `
 - `02-规划/配图数量确认.txt`
 - `02-规划/视觉中断清单.md`
 - `02-规划/视觉中断清单.json`
+- `02-规划/配图执行记录.txt`（必须记录 `planner_skill: baoyu-article-illustrator-plus`）
 - `02-规划/outline.md`
 - `02-规划/batch.json`
 - `02-规划/人工确认/`

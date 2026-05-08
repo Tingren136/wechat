@@ -10,6 +10,7 @@ from typing import Any
 THEME_LABELS = ["Claude", "纽约时报", "深度阅读", "Medium"]
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"}
 VISUAL_BREAK_PLAN_JSON = "视觉中断清单.json"
+PLANNER_TRACE_FILE = "配图执行记录.txt"
 APPROVAL_FILE_LABELS = {
     "polish_review": "01-润色完成后确认.txt",
     "markdown_review": "02-Markdown整理后确认.txt",
@@ -230,6 +231,24 @@ def validate_visual_break_quota(plan_json_path: Path, confirm_path: Path, issues
         )
 
 
+def validate_planner_skill_trace(planning_dir: Path, issues: list[dict[str, Any]]) -> None:
+    trace_path = planning_dir / PLANNER_TRACE_FILE
+    if not file_has_content(str(trace_path)):
+        add_issue(
+            issues,
+            "missing_planner_skill_trace",
+            "缺少 `02-规划/配图执行记录.txt`，请记录 `planner_skill: baoyu-article-illustrator-plus` 后再继续。",
+        )
+        return
+    text = trace_path.read_text(encoding="utf-8")
+    if "planner_skill: baoyu-article-illustrator-plus" not in text:
+        add_issue(
+            issues,
+            "invalid_planner_skill_trace",
+            "检测到配图规划未明确使用增强版 skill，请改为 `baoyu-article-illustrator-plus` 并更新执行记录。",
+        )
+
+
 def validate_image_count_review(state_path: Path, issues: list[dict[str, str]]) -> None:
     state = load_state(state_path)
     formatted_path = Path(state.get("artifacts", {}).get("formatted", ""))
@@ -253,6 +272,7 @@ def validate_illustration_plan_review(state_path: Path, issues: list[dict[str, s
     confirm_path = planning_dir / "配图数量确认.txt"
     validate_visual_break_plan(formatted_path, visual_break_plan_path, issues, require_plan=True)
     validate_visual_break_quota(visual_break_plan_json_path, confirm_path, issues)
+    validate_planner_skill_trace(planning_dir, issues)
     if not file_has_content(str(planning_dir / "outline.md")):
         add_issue(issues, "missing_outline", "缺少 02-规划/outline.md。")
     if not file_has_content(str(planning_dir / "batch.json")):

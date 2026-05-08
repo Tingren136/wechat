@@ -201,6 +201,7 @@ py .\skills\wechat-article-workflow\scripts\ensure_dependencies.py
 - `02-规划/配图数量确认.txt`
 - `02-规划/视觉中断清单.md`
 - `02-规划/视觉中断清单.json`
+- `02-规划/配图执行记录.txt`（必须包含 `planner_skill: baoyu-article-illustrator-plus`）
 - `02-规划/人工确认/`
 - `02-规划/规则摘要.md`
 - `02-规划/发布检查清单.md`
