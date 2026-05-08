@@ -18,6 +18,41 @@ def load_module(path: Path, name: str):
 
 
 class WorkflowValidatorTests(unittest.TestCase):
+    def test_validator_blocks_image_count_review_without_density_config(self):
+        validator = load_module(VALIDATOR_MODULE_PATH, "workflow_validator")
+        with tempfile.TemporaryDirectory() as temp_dir:
+            article_dir = Path(temp_dir) / "测试文章"
+            planning_dir = article_dir / "02-规划"
+            source_dir = article_dir / "01-原稿"
+            approval_dir = planning_dir / "人工确认"
+            planning_dir.mkdir(parents=True)
+            source_dir.mkdir(parents=True)
+            approval_dir.mkdir(parents=True)
+
+            markdown = "# 标题\n\n" + ("这是一段很长的正文" * 80)
+            (source_dir / "03-整理稿.md").write_text(markdown, encoding="utf-8")
+            (planning_dir / "视觉中断清单.md").write_text("# 视觉中断清单\n", encoding="utf-8")
+            (planning_dir / "视觉中断清单.json").write_text(
+                json.dumps({"rule_max_chars": 300, "required_body_images": 7, "long_plain_text_blocks": []}, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            (planning_dir / "配图数量确认.txt").write_text("正文配图 7 张", encoding="utf-8")
+            (approval_dir / "03-配图数量确认.txt").write_text("阶段: image_count_review\n状态: 已确认\n", encoding="utf-8")
+
+            state = {
+                "title": "测试文章",
+                "current_stage_id": "image_count_review",
+                "current_stage_label": "配图数量确认",
+                "artifacts": {"formatted": str(source_dir / "03-整理稿.md"), "approval_dir": str(approval_dir)},
+            }
+            state_path = planning_dir / "工作流状态.json"
+            state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+
+            result = validator.validate_stage(state_path)
+
+            self.assertEqual(result["status"], "blocked")
+            self.assertTrue(any(item["code"] == "missing_density_config" for item in result["issues"]))
+
     def test_validator_blocks_polish_review_without_human_approval_receipt(self):
         validator = load_module(VALIDATOR_MODULE_PATH, "workflow_validator")
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -62,6 +97,10 @@ class WorkflowValidatorTests(unittest.TestCase):
 
             markdown = "# 标题\n\n" + ("这是一段很长的正文" * 80)
             (source_dir / "03-整理稿.md").write_text(markdown, encoding="utf-8")
+            (planning_dir / "配图密度配置.json").write_text(
+                json.dumps({"density_profile": "medium_high", "max_chars_per_break": 300}, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
 
             state = {
                 "title": "测试文章",
@@ -93,6 +132,10 @@ class WorkflowValidatorTests(unittest.TestCase):
             markdown = "# 标题\n\n" + ("这是一段很长的正文" * 80)
             formatted_path = source_dir / "03-整理稿.md"
             formatted_path.write_text(markdown, encoding="utf-8")
+            (planning_dir / "配图密度配置.json").write_text(
+                json.dumps({"density_profile": "medium_high", "max_chars_per_break": 300}, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
             (planning_dir / "视觉中断清单.md").write_text("# 视觉中断清单\n", encoding="utf-8")
             (planning_dir / "视觉中断清单.json").write_text(
                 json.dumps({"rule_max_chars": 300, "required_body_images": 7, "long_plain_text_blocks": []}, ensure_ascii=False, indent=2),
@@ -260,6 +303,10 @@ class WorkflowValidatorTests(unittest.TestCase):
 
             markdown = "# 标题\n\n" + ("这是一段很长的正文" * 80)
             (source_dir / "03-整理稿.md").write_text(markdown, encoding="utf-8")
+            (planning_dir / "配图密度配置.json").write_text(
+                json.dumps({"density_profile": "medium_high", "max_chars_per_break": 300}, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
             (planning_dir / "配图数量确认.txt").write_text("正文配图 7 张。", encoding="utf-8")
             (planning_dir / "视觉中断清单.md").write_text(
                 "# 视觉中断清单\n\n- 第 3-3 行，补一张解释型图片。\n",
@@ -310,6 +357,10 @@ class WorkflowValidatorTests(unittest.TestCase):
 
             markdown = "# 标题\n\n" + ("这是一段很长的正文" * 80)
             (source_dir / "03-整理稿.md").write_text(markdown, encoding="utf-8")
+            (planning_dir / "配图密度配置.json").write_text(
+                json.dumps({"density_profile": "medium_high", "max_chars_per_break": 300}, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
             (planning_dir / "配图数量确认.txt").write_text("正文配图 7 张。", encoding="utf-8")
             (planning_dir / "视觉中断清单.md").write_text("# 视觉中断清单\n", encoding="utf-8")
             (planning_dir / "视觉中断清单.json").write_text(
@@ -353,6 +404,10 @@ class WorkflowValidatorTests(unittest.TestCase):
 
             markdown = "# 标题\n\n" + ("这是一段很长的正文" * 80)
             (source_dir / "03-整理稿.md").write_text(markdown, encoding="utf-8")
+            (planning_dir / "配图密度配置.json").write_text(
+                json.dumps({"density_profile": "medium_high", "max_chars_per_break": 300}, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
             (planning_dir / "配图数量确认.txt").write_text("正文配图 7 张。", encoding="utf-8")
             (planning_dir / "视觉中断清单.md").write_text("# 视觉中断清单\n", encoding="utf-8")
             (planning_dir / "视觉中断清单.json").write_text(

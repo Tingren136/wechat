@@ -41,6 +41,17 @@ class WorkflowVisualBreakPlannerTests(unittest.TestCase):
             breaks = [block["required_breaks"] for block in plan["long_plain_text_blocks"]]
             self.assertEqual(breaks, [2, 2, 2, 1])
 
+    def test_load_density_max_chars_from_config(self):
+        planner = load_module(PLANNER_MODULE_PATH, "workflow_visual_break_planner")
+        with tempfile.TemporaryDirectory() as temp_dir:
+            planning_dir = Path(temp_dir) / "02-规划"
+            planning_dir.mkdir(parents=True)
+            (planning_dir / "配图密度配置.json").write_text(
+                '{"density_profile":"medium","max_chars_per_break":400}',
+                encoding="utf-8",
+            )
+            self.assertEqual(planner.load_density_max_chars(planning_dir), 400)
+
 
 if __name__ == "__main__":
     unittest.main()

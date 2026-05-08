@@ -15,7 +15,7 @@ description: Use when producing a long-form WeChat Official Account article from
 - 每个关键阶段都必须允许用户确认
 - 默认一次性输出 4 套 Wechat 排版供手动选择
 - 编排子 skill 时，必须完整遵循子 skill 的原始流程，不能为了提速跳过确认、分析或中间产物
-- 超过 `300` 字的连续纯文字区段，必须在配图规划前先落成 `02-规划/视觉中断清单.md`
+- 必须先选择密度阈值（`200/300/400/500` 或自定义），再生成 `02-规划/视觉中断清单.md`
 - 每篇文章的图片资产必须单独存放在“以文章标题命名”的文件夹中，不能混放
 
 当前这一版已经封装好的最小稳定闭环是：
@@ -85,7 +85,7 @@ description: Use when producing a long-form WeChat Official Account article from
 3. 如果正文尚未润色，先走 `khazix-writer`
 4. 如果 Markdown 尚未整理，先走 `baoyu-format-markdown`
 5. 为当前文章创建独立图片资产目录，目录名默认等于文章标题
-6. 先确认本篇正文适合几张图，并先产出 `02-规划/视觉中断清单.md`
+6. 先确认本篇正文配图密度（200/300/400/500 或自定义），再产出 `02-规划/视觉中断清单.md`
 7. 再走 `lizi-article-illustrator` 输出配图规划、prompt 打包结果，并等待确认
 8. 图片生成阶段优先调用已安装的生图 skill，正文图默认 `4:3`
 9. 将图片插回正文，并检查 `300` 字内视觉中断规则
@@ -198,6 +198,7 @@ py .\skills\wechat-article-workflow\scripts\ensure_dependencies.py
 - `01-原稿/04-配图稿.md`
 - `02-规划/工作流状态.json`
 - `02-规划/配图数量确认.txt`
+- `02-规划/配图密度配置.json`
 - `02-规划/视觉中断清单.md`
 - `02-规划/视觉中断清单.json`
 - `02-规划/配图执行记录.txt`（必须包含 `planner_skill: lizi-article-illustrator`）

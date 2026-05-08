@@ -6,6 +6,8 @@ import re
 from pathlib import Path
 from typing import Any
 
+DENSITY_CONFIG_FILE = "配图密度配置.json"
+
 
 def count_text_units(text: str) -> int:
     normalized = re.sub(r"\s+", "", text)
@@ -72,10 +74,27 @@ def build_plan(markdown_path: Path, max_chars: int) -> dict[str, Any]:
     blocks = scan_long_plain_text_blocks(markdown, max_chars=max_chars)
     required_body_images = sum(int(block.get("required_breaks", 0)) for block in blocks)
     return {
+        "count_method": "count_text_units: 移除所有空白字符后统计字符数（含中文、英文、数字、标点）",
         "rule_max_chars": max_chars,
         "required_body_images": required_body_images,
         "long_plain_text_blocks": blocks,
     }
+
+
+def load_density_max_chars(planning_dir: Path) -> int | None:
+    config_path = planning_dir / DENSITY_CONFIG_FILE
+    if not config_path.exists():
+        return None
+    try:
+        data = json.loads(config_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(data, dict):
+        return None
+    value = data.get("max_chars_per_break")
+    if isinstance(value, int) and value > 0:
+        return value
+    return None
 
 
 def render_plan_markdown(plan: dict[str, Any]) -> str:
@@ -105,14 +124,18 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="生成视觉中断统计清单（机器统计）")
     parser.add_argument("--markdown-path", required=True, help="整理稿路径")
     parser.add_argument("--planning-dir", required=True, help="02-规划目录")
-    parser.add_argument("--max-chars", type=int, default=300, help="连续纯文字上限")
+    parser.add_argument("--max-chars", type=int, default=None, help="连续纯文字上限；如未传入，则优先读取 02-规划/配图密度配置.json")
     args = parser.parse_args()
 
     markdown_path = Path(args.markdown_path)
     planning_dir = Path(args.planning_dir)
     planning_dir.mkdir(parents=True, exist_ok=True)
 
-    plan = build_plan(markdown_path=markdown_path, max_chars=args.max_chars)
+    max_chars = args.max_chars
+    if max_chars is None:
+        max_chars = load_density_max_chars(planning_dir) or 300
+
+    plan = build_plan(markdown_path=markdown_path, max_chars=max_chars)
     md_path = planning_dir / "视觉中断清单.md"
     json_path = planning_dir / "视觉中断清单.json"
 
@@ -124,6 +147,7 @@ def main() -> None:
         "json_file": str(json_path),
         "required_body_images": plan["required_body_images"],
         "long_block_count": len(plan["long_plain_text_blocks"]),
+        "max_chars_per_break": max_chars,
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))
 

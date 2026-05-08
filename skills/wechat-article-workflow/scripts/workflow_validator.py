@@ -11,6 +11,7 @@ THEME_LABELS = ["Claude", "纽约时报", "深度阅读", "Medium"]
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"}
 VISUAL_BREAK_PLAN_JSON = "视觉中断清单.json"
 PLANNER_TRACE_FILE = "配图执行记录.txt"
+DENSITY_CONFIG_FILE = "配图密度配置.json"
 APPROVAL_FILE_LABELS = {
     "polish_review": "01-润色完成后确认.txt",
     "markdown_review": "02-Markdown整理后确认.txt",
@@ -175,6 +176,28 @@ def load_visual_break_plan_json(plan_json_path: Path) -> dict[str, Any] | None:
     return data
 
 
+def validate_density_config(planning_dir: Path, issues: list[dict[str, Any]]) -> None:
+    config_path = planning_dir / DENSITY_CONFIG_FILE
+    if not file_has_content(str(config_path)):
+        add_issue(
+            issues,
+            "missing_density_config",
+            "缺少 `02-规划/配图密度配置.json`，请先选择密度（200/300/400/500 或自定义）再统计图数。",
+        )
+        return
+    try:
+        data = json.loads(config_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        add_issue(issues, "invalid_density_config", "`配图密度配置.json` 不是有效 JSON。")
+        return
+    if not isinstance(data, dict):
+        add_issue(issues, "invalid_density_config", "`配图密度配置.json` 结构无效。")
+        return
+    max_chars = data.get("max_chars_per_break")
+    if not isinstance(max_chars, int) or max_chars <= 0:
+        add_issue(issues, "invalid_density_config", "`配图密度配置.json` 缺少有效的 max_chars_per_break。")
+
+
 def parse_required_body_images_from_plan(plan_data: dict[str, Any]) -> int:
     required = plan_data.get("required_body_images", 0)
     if isinstance(required, int):
@@ -292,10 +315,12 @@ def validate_planned_image_quota(plan_json_path: Path, batch_path: Path, issues:
 
 def validate_image_count_review(state_path: Path, issues: list[dict[str, str]]) -> None:
     state = load_state(state_path)
+    planning_dir = state_path.parent
     formatted_path = Path(state.get("artifacts", {}).get("formatted", ""))
-    confirm_path = state_path.parent / "配图数量确认.txt"
-    visual_break_plan_path = state_path.parent / "视觉中断清单.md"
-    visual_break_plan_json_path = state_path.parent / VISUAL_BREAK_PLAN_JSON
+    confirm_path = planning_dir / "配图数量确认.txt"
+    visual_break_plan_path = planning_dir / "视觉中断清单.md"
+    visual_break_plan_json_path = planning_dir / VISUAL_BREAK_PLAN_JSON
+    validate_density_config(planning_dir, issues)
     validate_visual_break_plan(formatted_path, visual_break_plan_path, issues, require_plan=True)
     if not file_has_content(str(confirm_path)):
         add_issue(issues, "missing_image_count_confirmation", "尚未确认本篇文章需要几张图，请先补 02-规划/配图数量确认.txt。")
@@ -312,6 +337,7 @@ def validate_illustration_plan_review(state_path: Path, issues: list[dict[str, s
     visual_break_plan_json_path = planning_dir / VISUAL_BREAK_PLAN_JSON
     confirm_path = planning_dir / "配图数量确认.txt"
     batch_path = planning_dir / "batch.json"
+    validate_density_config(planning_dir, issues)
     validate_visual_break_plan(formatted_path, visual_break_plan_path, issues, require_plan=True)
     validate_visual_break_quota(visual_break_plan_json_path, confirm_path, issues)
     validate_planner_skill_trace(planning_dir, issues)
